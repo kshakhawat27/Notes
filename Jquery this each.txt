@@ -1,0 +1,1 @@
+https://stackoverflow.com/questions/10434711/how-to-iterate-through-a-table-rows-and-get-the-cell-values-using-jquery/25171001

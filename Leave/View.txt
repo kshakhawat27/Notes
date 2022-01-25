@@ -1,0 +1,224 @@
+@model gHRM.Web.ViewModels.PackageConfigViewModel
+
+@{
+    ViewBag.Title = "Leave Configuration";
+    Layout = "~/Views/Shared/_AdminLteLayout.cshtml";
+}
+
+<script src="http://momentjs.com/downloads/moment.js"></script>
+<script src="http://malsup.github.com/jquery.form.js"></script>
+<link href="~/Content/css/bpopupStyle.css" rel="stylesheet" />
+<script src="~/Scripts/jquery.bpopup.min.js"></script>
+
+
+<script type="text/javascript">
+
+    function GridLoad() {
+        $("#grid").html("");
+        var dataSource = new kendo.data.DataSource({
+            type: "aspnetmvc-ajax",
+            pageSize: 25,
+            schema: {
+                data: "data", // records are returned in the "data" field of the response
+                total: "total" // total number of records is in the "total" field of the response
+            },
+            serverPaging: true,   // enable server paging
+            serverSorting: true,
+            serverFiltering: true,
+            transport: {
+                read: {
+                    url: '@Url.Action("LoadPackage", "LeaveConfig", "http")',
+                    dataType: 'json',
+                }
+            }
+        });
+
+
+        $("#grid").kendoGrid({
+            dataSource: dataSource,
+            groupable: false,
+            reorderable: true,
+            filterable: true,
+            sortable: true,
+
+            selectable: false,
+            resizable: true,
+            pageable: {
+                refresh: true,
+                pageSizes: true,
+                buttonCount: 5
+            },
+            columns: [
+                 {
+                     field: "PackageID",
+                     hidden: true,
+                     filterable: false
+                 },{
+                     field: "PackageName",
+                    title: "PackageName",
+                    // width: "120px",
+                     filterable: true,
+                 }
+            ]
+        });
+    }
+    function reloadGrid() {
+    $('#grid').data('kendoGrid').dataSource.read();
+    $('#grid').data('kendoGrid').refresh();
+}
+
+    $(document).ready(function () {
+        GridLoad();
+        $("#btnSave").click(function (e) {
+            setTimeout(function () {
+                reloadGrid();
+            }, 1000);
+        });
+
+        
+
+        $("#ApplicantOfficeTypeID,#ApprovalOfficeTypeID").change(function () {
+            var Typeside = $(this).prop("id") == "ApplicantOfficeTypeID" ? "tblApplicant" : "tblApproval";
+            var htm = "";
+            if ($(this).val()) {
+                var data = GenerateAjaxRequist('/LeaveConfig/LoadOfficeTypeXOfficeDesignation', JSON.stringify({ officeTypeID: $(this).val() }), "POST");
+
+                var chk='<input type="checkbox" name="chk">'
+                for (var i = 0; i < data.Records.length; i++) {
+                    htm+='<tr><td>'+chk+'</td>'+'<td style="padding-left:2px"><input type="hidden" value="'+data.Records[i].OfficeDesignationId+'"/>'+data.Records[i].OffcDesignName+'</td>'+'</tr>'
+                }
+            }
+            $("#" + Typeside + " tbody").html(htm);
+            GetCheckBody();
+        });
+
+        $("[name='chkAll']").click(function () {
+            var allchecked = $(this).prop("checked");
+            var tblBodycheck = $(this).parents("table").prop('id');
+            $("#" + tblBodycheck + " [name='chk']").prop("checked", allchecked);
+            if (allchecked) {
+                var details = new Array();
+                $("#" + tblBodycheck + " tbody tr").each(function () {
+                    details.push($(this).find('td').eq(1).find("[type='hidden']").val());
+                });
+                details = details.join(',');
+                if (tblBodycheck == "tblApproval") $("#ApprovalOfficeDesignation").val(details);
+                else $("#ApplicantOfficeDesignation").val(details);
+            }
+            else {
+                if (tblBodycheck == "tblApproval") $("#ApprovalOfficeDesignation").val('');
+                else $("#ApplicantOfficeDesignation").val('');
+            }
+        });
+
+    });
+    function GetCheckBody() {
+        $("[name='chk']").click(function () {
+            var allchecked = $(this).prop("checked");
+            var tblBodycheck = $(this).parents("table").prop('id');
+            var details = new Array();
+            $("#" + tblBodycheck + " tbody tr").each(function () {
+                    if($(this).find('td').eq(0).find("[name='chk']").prop("checked"))
+                        details.push($(this).find('td').eq(1).find("[type='hidden']").val());
+                });
+                details = details.join(',');
+                if (tblBodycheck == "tblApproval")   $("#ApprovalOfficeDesignation").val(details);
+                else  $("#ApplicantOfficeDesignation").val(details);
+        });
+    }
+</script>
+
+&nbsp;
+<h2 class="page-title">Leave Configuration</h2>
+&nbsp;
+@using (Html.BeginForm("PackageEntry", "LeaveConfig", FormMethod.Post, new { @class = "global-submit-form", @autocomplete = "off" }))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(model => model.PackageID)
+    @Html.HiddenFor(model => model.ApprovalOfficeDesignation)
+    @Html.HiddenFor(model => model.ApplicantOfficeDesignation)
+    <div class="row">
+        <div class="col-md-4">
+            <div class="form-group">
+                @Html.LabelFor(model => model.PackageName, htmlAttributes: new { @class = "control-label  col-sm-4 required" })
+                <div class="col-sm-8">
+                    @Html.TextBoxFor(model => model.PackageName, new { @class = "form-control", @autocomplete = "off" })
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <div class="col-md-6">
+                <div style="font-size: 15px;font-weight: bold;text-align: center;color:forestgreen">Approval</div>
+                <br />
+                <div class="row">
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.ApprovalOfficeTypeID, htmlAttributes: new { @class = "control-label  col-sm-4 required" })
+                        <div class="col-sm-8">
+                            @Html.DropDownListFor(model => model.ApprovalOfficeTypeID, Model.ApprovalOfficeTypeist, new { @class = "form-control" })
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <table id="tblApproval">
+                        <thead>
+                            <tr>
+                                <th><input type="checkbox" name="chkAll" /></th>
+                                <th style="padding-left:2px">Designation</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div style="font-size: 15px;font-weight: bold;text-align: center;color:forestgreen">Applicant</div>
+                <br />
+                <div class="row">
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.ApplicantOfficeTypeID, htmlAttributes: new { @class = "control-label  col-sm-4 required" })
+                        <div class="col-sm-8">
+                            @Html.DropDownListFor(model => model.ApplicantOfficeTypeID, Model.ApplicantOfficeTypeList, new { @class = "form-control" })
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <table id="tblApplicant">
+                        <thead>
+                            <tr>
+                                <th><input type="checkbox" name="chkAll" /></th>
+                                <th style="padding-left:2px">Designation</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <br />
+    <div class="row">
+        <div class="col-md-8"></div>
+        <div class="col-md-4">
+            <button type="submit" class="btn btn-primary" id="btnSave"> Save </button>
+        </div>
+    </div>
+}
+&nbsp;
+<div class="row">
+    <div class="col-md-12">
+        <div class="table-responsive">
+            <div id="grid"></div>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts {
+
+    @Scripts.Render("~/bundles/jqueryui")
+    @Scripts.Render("~/bundles/jtable")
+    @Scripts.Render("~/bundles/alert")
+    <script src="~/Assets/js/app/CommonMethod.js"></script>
+}

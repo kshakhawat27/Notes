@@ -1,0 +1,21 @@
+  $("#DegreeLevelId").change(function () {
+            var degreeLevelId = $("#DegreeLevelId").val();
+
+            if (degreeLevelId != "") {
+                $.ajax({
+                    type: 'GET',
+                    contentType: "application/json; charset=utf-8",
+                    url: '@Url.Action("GetDegreesByDegreeLevelId", "EducationSubjects", "http")',
+                    data: { degreeLevelId: degreeLevelId },
+                    dataType: 'json',
+                    async: true,
+                    success: function (data) {
+                        if (data.length > 0) {
+                            $("#DegreeLevel").val(data);
+                        } else {
+                            $("#DegreeLevel").val("");
+                        }
+                    },
+                });
+          } 
+        });

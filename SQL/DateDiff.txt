@@ -1,0 +1,1 @@
+	 select  CAST(DATEDIFF(MONTH,convert(datetime,JobEndDate,105),convert(datetime,JobStartDate,105))as float)/cast(12 as float) from apply.ApplicantJobExperienceInfo

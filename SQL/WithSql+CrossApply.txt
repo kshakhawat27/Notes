@@ -1,0 +1,19 @@
+WITH    t AS 
+        (
+        SELECT  1 AS id
+        UNION ALL
+        SELECT  2
+        )
+SELECT  *
+FROM    t
+CROSS APPLY
+        (
+        SELECT  TOP (t.id) m.*
+        FROM    master m
+        ORDER BY
+                id
+        ) q
+
+
+
+Cross Apply: Used to pass each row id to table valued function to retrive data Inner join can't do that

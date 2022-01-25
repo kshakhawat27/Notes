@@ -1,0 +1,39 @@
+<input name="selector[]" id="ad_Checkbox1" class="ads_Checkbox" type="checkbox" value="1" />
+<input name="selector[]" id="ad_Checkbox2" class="ads_Checkbox" type="checkbox" value="2" />
+<input name="selector[]" id="ad_Checkbox3" class="ads_Checkbox" type="checkbox" value="3" />
+<input name="selector[]" id="ad_Checkbox4" class="ads_Checkbox" type="checkbox" value="4" />
+<input type="button" id="save_value" name="save_value" value="Save" />
+
+
+  $(function(){
+      $('#save_value').click(function(){
+        var val = [];
+        $(':checkbox:checked').each(function(i){
+          val[i] = $(this).val();
+        });
+      });
+    });
+
+
+
+    <input name="locationthemes" id="ad_Checkbox1" class="chk"    type="checkbox" value="1" />
+        <input name="locationthemes" id="ad_Checkbox2" class="chk" type="checkbox" value="2" />
+        <input name="locationthemes" id="ad_Checkbox3" class="chk" type="checkbox" value="3" />
+        <input name="locationthemes" id="ad_Checkbox4" class="chk" type="checkbox" value="4" />
+        <input type="button" id="save_value" name="save_value" value="Save" />
+
+
+       $(function () {
+            $('#save_value').click(function () {
+                var val = [];
+              var  i = 0;
+                //$(':checkbox:checked').each(function (i) {
+                //    val[i] = $(this).val();
+                //});
+                $('input[name="locationthemes"]:checked').each(function () {
+                    /*          console.log(this.value);*/
+                    val.push( $(this).val());
+                });
+                console.log(val);
+            });
+        });

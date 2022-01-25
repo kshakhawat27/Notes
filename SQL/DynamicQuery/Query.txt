@@ -1,0 +1,21 @@
+DECLARE @cols AS NVARCHAR(MAX),@query  AS NVARCHAR(MAX);
+
+SET @cols = STUFF((SELECT distinct ',' + QUOTENAME(p.ComponentName) 
+            from prl.PRSalaryConfiguration c
+left join prl.PRComponent p on p.PRComponentID=c.PRComponentID
+where EmployeeId=74  and '2017-12-31' between c.EffectiveStartDate and c.EffectiveEndDate
+            FOR XML PATH(''), TYPE
+            ).value('.', 'NVARCHAR(MAX)') 
+        ,1,1,'')
+
+		print(@cols)
+
+	set @query =	' select ' + @cols +' from (
+
+					select distinct(p.ComponentName) as ComponentName ,p.ComponentAmount 
+					from prl.PRSalaryConfiguration c
+left join prl.PRComponent p on p.PRComponentID=c.PRComponentID
+where EmployeeId=74)d 
+					pivot( Sum (d.ComponentAmount) for d.ComponentName in (' + @cols +'))tf'
+
+execute (@query)

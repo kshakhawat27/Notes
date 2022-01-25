@@ -1,0 +1,6 @@
+  foreach (var Item in DetailsList.Tables)
+                //    {
+                //       model.ApplicantJobExperience.Add(new ApplicantJobExperience
+                //       {
+                //           Designation = Item["Designation"]
+                //        });

@@ -1,0 +1,129 @@
+ function SaveImage() {
+             var ID = $("#ID").val();
+
+             if (ID > 0) {
+            var img = document.getElementById("Image").value;
+
+            $.ajax({
+                type: "POST",
+                dataType: "json",
+                async: false,
+                cache: false,
+                url: '@Url.Action("SavedApplicantModel", "Apply")',
+                data: JSON.stringify({ AppplicantId: ID }),
+                contentType: "application/json; charset=utf-8",
+                success: function (data) {
+
+                    if (data.result > 0) {
+                        var ID = data.result;
+                        var xhr = new XMLHttpRequest();
+                        var fd = new FormData();
+                        fd.append("file", document.getElementById("Image").files[0]);
+                        fd.append("ID", ID);
+                        xhr.open("POST", "/Apply/UploadImage/", true);
+                        xhr.send(fd);
+                        xhr.addEventListener("load", function (event) {
+                            if (event.target.response > 0) {
+                                $(".panel-body .create-success").show(800).fadeToggle(3000);
+                            } else {
+                                $.alert.open("Error", "Image couldn't Save");
+                            }
+                        }, false);
+
+                        $.alert.open('Success', data.message);
+                    } else {
+                        $.alert.open('Error', data.message);
+                    }
+                },
+                error: function (xhr, status, error) {
+                    alert(error);
+                }
+            });
+        } else {
+            $.alert.open("Error", "Please Insert Required Fields");
+        }
+    }
+
+------------------------------------------
+ [HttpPost]
+        public JsonResult SavedApplicantModel(int? AppplicantId)
+        {
+
+            var model = new ApplicantMasterViewModel();
+
+            if (AppplicantId > 0)
+            {
+                int Id = (int)Convert.ToInt64(AppplicantId);
+                var _model = ApplicantMasterService.GetById(Id);
+                model = Mapper.Map<ApplicantMaster, ApplicantMasterViewModel>(_model);
+            }
+
+            var result = model.ID;
+            var message = "Saved Successfull";
+
+            return Json(new { result = result, message = message }, JsonRequestBehavior.AllowGet);
+        }
+
+        [HttpPost]
+        public ActionResult UploadImage(HttpPostedFileBase file, string ID)
+        {
+            var Result = 0;
+            var entity = ApplicantMasterService.GetById(Convert.ToInt32(ID));
+
+            if (file != null)
+            {
+                byte[] data = new byte[file.ContentLength];
+                file.InputStream.Read(data, 0, file.ContentLength);
+                entity.ImageByte = data;
+                ApplicantMasterService.Update(entity);
+                Result = 1;
+            }
+            else
+            {
+                Result = 2;
+            }
+            return Json(Result, JsonRequestBehavior.AllowGet);
+        }
+
+
+------------------------------
+
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Web.Mvc;
+using System.Web;
+
+ public ActionResult Step_01(int? AppplicantId)
+        {
+            var model = new ApplicantMasterViewModel();
+
+            model.UserId = LoggedInEmployeeId;
+
+            long? UserId = model.UserId;
+            if (AppplicantId > 0)
+            {
+                int Id = (int)Convert.ToInt64(AppplicantId);
+                var _model = ApplicantMasterService.GetById(Id);
+                model = Mapper.Map<ApplicantMaster, ApplicantMasterViewModel>(_model);
+            }
+
+            if (UserId > 0)
+            {
+                var _model = ApplicantMasterService.GetByUserId(UserId);
+
+                model = Mapper.Map<ApplicantMaster, ApplicantMasterViewModel>(_model);
+                model.BirthDateMsg = _model.DateofBirth.ToString("dd-MMM-yyyy");
+
+                string data = Convert.ToBase64String(model.ImageByte);
+
+                ViewBag.Image = string.Format("data:image/png;base64,{0}", data);
+            }
+
+            return View(model);
+
+        }
+

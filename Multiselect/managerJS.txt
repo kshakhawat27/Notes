@@ -1,0 +1,24 @@
+In js
+----------------------
+var approveCellingManager = {
+    init: function () {
+        this.initChoosen();
+    },
+
+    initChoosen: function () {
+        if ($(".chosen").length > 0) {
+            jQuery(".chosen").chosen();
+        }
+    },
+
+
+}
+
+$(function () {
+    approveCellingManager.init();
+});
+
+
+in view
+
+/////@multiple="multiple" @class="form-control chosen" --- In new

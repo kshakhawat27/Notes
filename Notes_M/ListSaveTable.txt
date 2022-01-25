@@ -1,0 +1,31 @@
+
+        $("#btnSave").click(function (e) {
+            e.preventDefault();
+            $(this).hide()
+            var details = new Array();
+            $("#tbl tbody tr").each(function () {
+                var detailRow = {
+                    MinimumDay: $("#MinimumDay").val(),
+                    MaximumDay: $("#MaximumDay").val(),
+                    LayerNo:$(this).closest('tr').find('td').eq(0).text(),
+                    PackageID: $(this).closest('tr').find('td').eq(1).find("select[name='PackageID']").val(),
+                    LayerStatus: $(this).closest('tr').find('td').eq(2).find("select[name='LayerStatus']").val()
+                    };
+                    details.push(detailRow);
+            });
+            var result = "", msg = "", css = "failed";
+            var data = GenerateAjaxRequist('/LeaveConfig/DayXPackageConfigEntry', JSON.stringify({ model: details }), "POST");
+            if (data.Result == "OK") {
+                css = "success";
+                $("#MinimumDay,#MaximumDay,#NoOfLayer").val('');
+                $("#tbl tbody tr").html('')
+            }
+
+
+            $("#dvMessage").attr('class', css);
+            $("#dvMessage").html(data.Message);
+            $("#dvMessage").show();
+            $("#dvMessage").toggle('fade', 1500);
+            reloadGrid();
+            $(this).show();
+        });

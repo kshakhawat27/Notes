@@ -1,0 +1,35 @@
+  //$("#chkNonApproved").click(function () {
+        //    var checkVal = $("#chkNonApproved").is(":checked");
+        //    if (checkVal == true) {
+        //        $("#chkApproved").prop('checked', false);
+        //        $("#chkReject").prop('checked', false);
+        //        qType = "N"
+        //        GridLoad(qType);
+        //    }
+        //});
+
+        //$("#chkApproved").click(function () {
+        //    var checkVal = $("#chkApproved").is(":checked");
+        //    if (checkVal == true) {
+        //        $("#chkNonApproved").prop('checked', false);
+        //        $("#chkReject").prop('checked', false);
+        //        qType = "A"
+        //        GridLoad(qType);
+        //    }
+        //});
+
+        $('input[type=radio][name=radioType]').change(function () {
+
+            if (this.value == "chkApplicant") {
+
+                var typedValue = this.value;
+
+                alert(typedValue);
+
+            } else if (this.value == "chkApprover") {
+
+                var typedValue = this.value;
+                alert(typedValue);
+            }
+
+        });

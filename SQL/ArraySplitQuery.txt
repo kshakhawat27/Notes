@@ -1,0 +1,6 @@
+	DECLARE @EmployeeStatusList TABLE (Id INT)
+
+	INSERT INTO @EmployeeStatusList (Id)
+	SELECT CONVERT(INT, ListId) FROM dbo.SplitList (@EmployeeStatusArr, ',')
+
+	AND (@EmployeeStatusArr = '' OR e.EmployeeStatusId IN (SELECT Id FROM @EmployeeStatusList))

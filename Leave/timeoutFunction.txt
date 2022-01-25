@@ -1,0 +1,5 @@
+     $("#btnSave").click(function (e) {
+            setTimeout(function () {
+                reloadGrid();
+            }, 1000);
+        });

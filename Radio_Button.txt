@@ -1,0 +1,17 @@
+        $("#btnSav2e").click(function (e) {
+            e.preventDefault();
+
+            debugger;
+
+            var test = $('input[name="option"]:checked').val();
+
+        });
+
+
+<input type="radio" name="option" value="Mango, Fruit" /> <label>Mango</label>
+<br>
+
+<input type="radio" name="option" value="Onion, Vegetable" /><label>Onion</label>
+
+type="radio" name="example" value='{ "key1": "value1", "key2": "value2", "key3": "value3" }'>
+

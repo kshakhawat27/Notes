@@ -1,0 +1,14 @@
+   function GetCheckBody() {
+        $("[name='chk']").click(function () {
+            var allchecked = $(this).prop("checked");
+            var tblBodycheck = $(this).parents("table").prop('id');
+            var details = new Array();
+            $("#" + tblBodycheck + " tbody tr").each(function () {
+                    if($(this).find('td').eq(0).find("[name='chk']").prop("checked"))
+                        details.push($(this).find('td').eq(1).find("[type='hidden']").val());
+                });
+                details = details.join(',');
+                if (tblBodycheck == "tblApproval")   $("#ApprovalOfficeDesignation").val(details);
+                else  $("#ApplicantOfficeDesignation").val(details);
+        });
+    }

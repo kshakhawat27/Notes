@@ -1,0 +1,7 @@
+   var DetailsId = [];
+                    $('input:checkbox[name=Id]:checked').each(function ()
+                    {
+                        // add $(this).val() to your array
+                        var CheckedValue = $(this).val();
+                        DetailsId.push(CheckedValue);
+                    });

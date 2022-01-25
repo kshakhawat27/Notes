@@ -1,0 +1,30 @@
+WHILE (
+		(YEAR(@CurDate) < YEAR(@Today))
+		OR
+		(YEAR(@CurDate) = YEAR(@Today) AND MONTH(@CurDate) <= MONTH(@Today))
+	)
+	BEGIN
+		SET @LastDayOfMonth = DATEADD(MONTH, 1, @CurDate)
+		SET @LastDayOfMonth = DATEADD(DAY, - DAY(@LastDayOfMonth), @LastDayOfMonth)
+
+		SET @SalaryDate = NULL
+		SELECT TOP 1 @SalaryDate = SalaryDate FROM prl.EmployeeMonthlySalary
+		WHERE SalaryMonth = MONTH(@CurDate) AND SalaryYear = YEAR(@CurDate)
+		SET @SalaryDate = ISNULL(@SalaryDate, @LastDayOfMonth)
+
+		INSERT INTO #TempEmployeeInfo (EmployeeId, EmployeeStatusId, SalaryDate, BasicSalary, SerMonth, SerYear, CurGratuity, CumGratuity, GratuityTimes, IsInsertToDB)
+		SELECT
+		E.EmployeeId,
+		ISNULL(E.EmployeeStatusId, 0) AS EmployeeStatusId,
+		@SalaryDate AS SalaryDate,
+		MIN(SC.ComponentAmount) AS BasicSalary,
+		MIN(CASE WHEN E.FirstJoiningDate IS NULL THEN 0 ELSE DATEDIFF(MONTH, E.FirstJoiningDate, @CurDate) END) AS SerMonth,
+		0, 0, 0, 0, 1
+		FROM prl.PRSalaryConfiguration AS SC
+		JOIN Employee AS E ON SC.EmployeeID = E.EmployeeId AND @CurDate BETWEEN SC.EffectiveStartDate AND SC.EffectiveEndDate
+		WHERE SC.IsActive = 1 AND E.IsActive = 1
+		AND SC.PRComponentID IN (SELECT PRComponentID FROM prl.PRComponent WHERE ComponentName = @ComponentName AND IsActive = 1)
+		GROUP BY E.EmployeeId, E.EmployeeStatusId
+
+		SET @CurDate = DATEADD(MONTH, 1, @CurDate)
+	END

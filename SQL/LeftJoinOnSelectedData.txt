@@ -1,0 +1,6 @@
+select * from (SELECT CONVERT(VARCHAR(10),ROW_NUMBER() Over (Order by (SELECT 1))) AS rowSl,J.JobId,
+	j.PostName,j.PostDescription
+     FROM apply.JobsCircular J)test
+	 left join 
+	 (select * from apply.Appliedpost M
+	    where M.ApplicantId=4) test3 on test.JobId=test3.JobId

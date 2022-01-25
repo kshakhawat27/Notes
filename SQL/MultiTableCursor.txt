@@ -1,0 +1,35 @@
+USE company;
+ 
+DECLARE @Dep_Id INT
+DECLARE @Emp_Id INT
+ 
+DECLARE EmpCursor CURSOR FOR
+SELECT dep_id, id FROM employee
+ 
+OPEN EmpCursor
+ 
+FETCH NEXT FROM EmpCursor INTO @Dep_Id, @Emp_Id
+	DECLARE @DepName NVARCHAR(50)
+WHILE(@@FETCH_STATUS = 0)
+BEGIN
+ 
+	SELECT @DepName = dep_name FROM department where id = @Dep_Id
+ 
+	IF(@DepName = 'Sales')
+	BEGIN 
+	UPDATE employee SET salary = (salary * 1.1) WHERE id = @Emp_Id
+	END
+	ELSE IF(@DepName = 'HR')
+	BEGIN 
+	UPDATE employee SET salary = (salary * 1.2) WHERE id = @Emp_Id
+	END
+	IF(@DepName = 'IT')
+	BEGIN 
+	UPDATE employee SET salary = (salary * 1.5) WHERE id = @Emp_Id
+	END
+	
+	FETCH NEXT FROM EmpCursor INTO @Dep_Id, @Emp_Id
+END
+ 
+CLOSE EmpCursor
+DEALLOCATE EmpCursor

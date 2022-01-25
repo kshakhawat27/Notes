@@ -1,0 +1,14 @@
+    $("#ApplicantOfficeTypeID,#ApprovalOfficeTypeID").change(function () {
+            var Typeside = $(this).prop("id") == "ApplicantOfficeTypeID" ? "tblApplicant" : "tblApproval";
+            var htm = "";
+            if ($(this).val()) {
+                var data = GenerateAjaxRequist('/LeaveConfig/LoadOfficeTypeXOfficeDesignation', JSON.stringify({ officeTypeID: $(this).val() }), "POST");
+
+                var chk='<input type="checkbox" name="chk">'
+                for (var i = 0; i < data.Records.length; i++) {
+                    htm+='<tr><td>'+chk+'</td>'+'<td style="padding-left:2px"><input type="hidden" value="'+data.Records[i].OfficeDesignationId+'"/>'+data.Records[i].OffcDesignName+'</td>'+'</tr>'
+                }
+            }
+            $("#" + Typeside + " tbody").html(htm);
+            GetCheckBody();
+        });

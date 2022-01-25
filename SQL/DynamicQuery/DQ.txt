@@ -1,0 +1,30 @@
+ALTER PROCEDURE [dbo].[SP_EmployeeSalaryDetailsById] 	
+(
+	 @EmpID INT	 
+)
+ 
+AS
+BEGIN	
+	SET NOCOUNT ON;
+	
+--DECLARE @cols AS NVARCHAR(MAX),@query  AS NVARCHAR(MAX), @Existingdate datetime;
+
+--        Set @Existingdate=GETDATE()
+		
+--SET @cols = STUFF((SELECT distinct ',' + QUOTENAME(p.ComponentName) 
+--            from prl.PRSalaryConfiguration c
+--			left join prl.PRComponent p on p.PRComponentID=c.PRComponentID
+--			where EmployeeId=@EmpID  and convert(date,@Existingdate)>=c.EffectiveStartDate and convert(date,@Existingdate)<=c.EffectiveEndDate and c.IsActive=1
+--            FOR XML PATH(''), TYPE
+--            ).value('.', 'NVARCHAR(MAX)') 
+--        ,1,1,'')
+
+
+--	set @query =' select ' + @cols +',EmployeeId from (
+--					select p.ComponentName as ComponentName ,c.ComponentAmount, c.EmployeeId 
+--					from prl.PRSalaryConfiguration c
+--					left join prl.PRComponent p on p.PRComponentID=c.PRComponentID
+--					where EmployeeId=' + Convert(varchar(10),@EmpID) +' and convert(date,GETDATE())>=c.EffectiveStartDate and convert(date,GETDATE())<=c.EffectiveEndDate and c.IsActive=1)d 
+--					pivot(Sum (d.ComponentAmount) for d.ComponentName in (' + @cols +'))tf'
+
+--execute (@query)

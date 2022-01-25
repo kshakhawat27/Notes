@@ -1,0 +1,37 @@
+    public JsonResult PackageEntry(PackageConfigViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    if (model != null)
+                    {
+                        if (model.ApplicantOfficeTypeID.HasValue && model.ApprovalOfficeTypeID.HasValue && !string.IsNullOrEmpty(model.PackageName)
+                            && !string.IsNullOrEmpty(model.ApplicantOfficeDesignation) && !string.IsNullOrEmpty(model.ApprovalOfficeDesignation))
+                        {   //update
+                            var mappedData = Mapper.Map<PackageConfigViewModel, PackageConfig>(model);
+                            if (mappedData.PackageID > 0) { }
+                            else
+                            {
+                                if (packageConfigService.GetMany(x => x.PackageName == mappedData.PackageName).Any())
+                                    GetErrorMessageResult("Package name same not allow");
+                                else
+                                {
+                                    mappedData.IsActive = true;
+                                    packageConfigService.Create(mappedData);
+                                }
+                            }
+                            return GetSuccessMessageResult();
+                        }
+                        else return GetErrorMessageResult("Data missing");
+                    }
+                    else return GetErrorMessageResult("Data not found");
+                }
+                catch (Exception ex)
+                {
+                    return GetErrorMessageResult(ex.Message);
+                }
+
+            }
+            else return GetErrorMessageResult("Data not found");
+        }

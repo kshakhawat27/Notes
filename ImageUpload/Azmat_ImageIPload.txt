@@ -1,0 +1,76 @@
+    [HttpPost]
+        public JsonResult SaveStyleImage()
+        {
+            int _result = 0;
+            objList = new StyleImageList();
+            StyleImageDBModel _dbModel = new StyleImageDBModel();
+
+            for (int i = 0; i < Request.Files.Count; i++)
+            {
+                var file = Request.Files[i];
+                var fileName = Path.GetFileName(file.FileName);
+                var extension = fileName.Split('.').Last();
+
+                byte[] BrandImage = new byte[Request.Files[i].ContentLength];
+                Request.Files[i].InputStream.Read(BrandImage, 0, Request.Files[i].ContentLength);
+
+                _dbModel.ImageName = fileName;
+                _dbModel.ImageExtension = extension;
+                _dbModel.StyleImageID = Convert.ToInt32(Request["StyleImageID"].ToString());
+                _dbModel.StyleID = Request["StyleID"].ToString();
+                _dbModel.ImageData = BrandImage;
+
+                _result = objList.SaveStyleImage(_dbModel);
+            }
+            if (_result > 0)
+                return Json(new { success = true });
+            else
+                return Json(new { success = false });
+        }
+
+
+------------------------------
+
+function SaveStyleImageFormValue() {
+
+    var _isError = 0;
+    var StyleImageID = $("#hdStyleImageID").val();
+    var StyleID = $("#ddlStyleID").val();
+
+
+    if (StyleImageID == "") {
+        StyleImageID = 0;
+    }
+
+    if (_isError == 1) {
+        return false;
+    }
+
+    var formData = new FormData();
+    var totalFiles = document.getElementById("imageUploadForm").files.length;
+    for (var i = 0; i < totalFiles; i++) {
+        var file = document.getElementById("imageUploadForm").files[i];
+        formData.append("imageUploadForm", file);
+    }
+    formData.append("StyleImageID", StyleImageID);
+    formData.append("StyleID", StyleID);
+
+    $.ajax({
+        type: "POST",
+        url: baseURL + "/StyleImage/SaveStyleImage",
+        data: formData,
+        dataType: 'json',
+        contentType: false,
+        processData: false,
+        success: function (data) {
+            if (data.success == true) {
+                $.notify("Data Save Successfully..", "success");
+                LoadSelectedStyleImages(StyleID, true);
+            }
+            else {
+                $.notify("Data Save Failed..", "error");
+            }
+            ClearForm();
+        }
+    });
+}
