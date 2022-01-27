@@ -1,0 +1,8 @@
+@{
+    ViewBag.Title = "ApproveCelling Create";
+    Layout = "~/Views/Shared/_LayoutMaster.cshtml";
+    var producttype = Model == null ? null : Model.producttype;
+    var roleList = Model == null ? null : Model.roleList;
+    var productList = Model == null ? null : Model.productlist;
+    //var roleName = Model == null ? null : Model.roleName;
+}

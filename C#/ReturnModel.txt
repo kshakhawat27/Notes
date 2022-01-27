@@ -1,0 +1,18 @@
+ ApproveCelling GetApproveCellingbyroleAndproductId(int roleID, int productId);
+
+public ApproveCelling GetApproveCellingbyroleAndproductId(int roleID, int productId)
+        {
+            try
+            {
+
+                var approveCelling = DataContext.ApproveCellings
+                    .Where(x => x.RoleID == roleID && x.ProductId == productId)
+                    .FirstOrDefault();
+
+                return approveCelling;
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
+        }

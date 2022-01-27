@@ -1,0 +1,71 @@
+using gBanker.Data.CodeFirstMigration.Db;
+using gBanker.Data.CodeFirstMigration.InfrastructureBase;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace gBanker.Data.Repository
+{
+    public interface IApproveCellingRepository : IRepository<ApproveCelling>
+    {
+        IEnumerable<ApproveCelling> GetApproveCellingDetail();
+        List<ApproveCelling> getApproveCellingbyrole_productId(int? RoleID,int product);
+    }
+    public class ApproveCellingRepository : RepositoryBaseCodeFirst<ApproveCelling>, IApproveCellingRepository
+    {
+        public ApproveCellingRepository(IDatabaseFactoryCodeFirst databaseFactory)
+            : base(databaseFactory)
+        {
+
+        }
+      
+        public List<ApproveCelling> getApproveCellingbyrole_productId(int? RoleID, int product)
+        {
+            List<ApproveCelling> _List = new List<ApproveCelling>();
+
+            var Data = DataContext.ApproveCellings.Where(x => x.RoleID == RoleID)
+         .Select(s => new ApproveCelling()
+         {
+
+             ApproveCellingID = s.ApproveCellingID,
+
+
+             RoleID = s.RoleID,
+             MaxRange = s.MaxRange,
+             MinRange = s.MinRange,
+             RoleName = s.RoleName,
+             ProdType = s.ProdType
+
+
+         });
+
+            _List.AddRange(Data);
+            return _List;
+        }
+
+        public IEnumerable<ApproveCelling> GetApproveCellingDetail()
+        {
+            var obj = DataContext.ApproveCellings
+            .Select(s => new ApproveCelling()
+            {
+
+                ApproveCellingID = s.ApproveCellingID,
+               
+
+                RoleID = s.RoleID,
+                MaxRange = s.MaxRange,
+                MinRange = s.MinRange,
+                RoleName = s.RoleName,
+                ProdType = s.ProdType
+               
+
+            });
+
+            return obj;
+        }
+
+      
+    }
+}
