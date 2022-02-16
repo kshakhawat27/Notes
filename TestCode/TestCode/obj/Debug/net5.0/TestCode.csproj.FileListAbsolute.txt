@@ -1,0 +1,16 @@
+E:\Kazi\TestCode\TestCode\bin\Debug\net5.0\TestCode.exe
+E:\Kazi\TestCode\TestCode\bin\Debug\net5.0\TestCode.deps.json
+E:\Kazi\TestCode\TestCode\bin\Debug\net5.0\TestCode.runtimeconfig.json
+E:\Kazi\TestCode\TestCode\bin\Debug\net5.0\TestCode.runtimeconfig.dev.json
+E:\Kazi\TestCode\TestCode\bin\Debug\net5.0\TestCode.dll
+E:\Kazi\TestCode\TestCode\bin\Debug\net5.0\ref\TestCode.dll
+E:\Kazi\TestCode\TestCode\bin\Debug\net5.0\TestCode.pdb
+E:\Kazi\TestCode\TestCode\obj\Debug\net5.0\TestCode.csproj.AssemblyReference.cache
+E:\Kazi\TestCode\TestCode\obj\Debug\net5.0\TestCode.GeneratedMSBuildEditorConfig.editorconfig
+E:\Kazi\TestCode\TestCode\obj\Debug\net5.0\TestCode.AssemblyInfoInputs.cache
+E:\Kazi\TestCode\TestCode\obj\Debug\net5.0\TestCode.AssemblyInfo.cs
+E:\Kazi\TestCode\TestCode\obj\Debug\net5.0\TestCode.csproj.CoreCompileInputs.cache
+E:\Kazi\TestCode\TestCode\obj\Debug\net5.0\TestCode.dll
+E:\Kazi\TestCode\TestCode\obj\Debug\net5.0\ref\TestCode.dll
+E:\Kazi\TestCode\TestCode\obj\Debug\net5.0\TestCode.pdb
+E:\Kazi\TestCode\TestCode\obj\Debug\net5.0\TestCode.genruntimeconfig.cache

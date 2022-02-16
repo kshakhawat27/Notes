@@ -1,0 +1,24 @@
+state ={
+lineTypes:[]
+
+}
+
+ getLineTypeList=()=>{
+   let lineTypes=[];
+
+    Object.values(LineTypeConstants).forEach(val => {
+      lineTypes.push(val);
+  });
+
+call in componentDidMount(
+      
+this.getLineTypeList();
+)
+
+<select>
+
+{ lineTypes.map((item,index)=>{
+  return(
+  <option key={index} value={item}>{item}</option>
+  )
+})}  </select>
