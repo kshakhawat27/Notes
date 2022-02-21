@@ -1,0 +1,26 @@
+  List<TblEmployee> user = new List<TblEmployee> (); 
+
+            using (var stream = new MemoryStream())
+            {
+                files.CopyToAsync(stream);
+
+                using (var package = new ExcelPackage(stream))
+                {
+                    ExcelWorksheet worksheet = package.Workbook.Worksheets[0];
+
+                    var rowCount = worksheet.Dimension.Rows;
+
+                    for (int i = 2; i <= rowCount; i++)
+                    {
+                        user.Add(new TblEmployee
+                        {
+                            Name = worksheet.Cells[i, 1].Value.ToString().Trim(),
+                        }) ;
+                    }              
+                }
+                TblEmployee emp = new TblEmployee();
+
+                foreach (TblEmployee employee in user)
+                {
+                    objemployee.AddEmployee(employee);
+                }
