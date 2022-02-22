@@ -1,0 +1,57 @@
+ Package: Install-Package DotNetCore.NPOI
+
+ public string ImportExcelFile()
+        {
+            IFormFile file = Request.Form.Files[0];
+            var webRootPath = _env.WebRootPath;
+            string folderName = "Upload";
+            string newPath = Path.Combine(webRootPath, folderName);
+            StringBuilder sb = new StringBuilder();
+            if (!Directory.Exists(newPath))
+                Directory.CreateDirectory(newPath);
+
+            if (!Directory.Exists(newPath))
+            {
+                Directory.CreateDirectory(newPath);
+            }
+            if (file.Length > 0)
+            {
+
+                string sFileExtension = Path.GetExtension(file.FileName).ToLower();
+                ISheet sheet;
+                string fullPath = Path.Combine(newPath, file.FileName);
+                using (var stream = new FileStream(fullPath, FileMode.Create))
+                {
+                    file.CopyTo(stream);
+                    stream.Position = 0;
+                    if (sFileExtension == ".xls")//This will read the Excel 97-2000 formats    
+                    {
+                        HSSFWorkbook hssfwb = new HSSFWorkbook(stream);
+                        sheet = hssfwb.GetSheetAt(0);
+                    }
+                    else //This will read 2007 Excel format    
+                    {
+                        XSSFWorkbook hssfwb = new XSSFWorkbook(stream);
+                        sheet = hssfwb.GetSheetAt(0);
+                    }
+                    IRow headerRow = sheet.GetRow(0);
+                    int cellCount = headerRow.LastCellNum;
+
+                    for (int i = (sheet.FirstRowNum + 1); i <= sheet.LastRowNum; i++) //Read Excel File 
+                    {
+                        IRow row = sheet.GetRow(i);
+                        if (row == null) continue;
+                        if (row.Cells.All(d => d.CellType == CellType.Blank)) continue;
+
+                        TblEmployee employee = new TblEmployee()
+                        {
+                            Name = (row.Cells[0].ToString()),
+
+                        };
+
+                        objemployee.AddEmployee(employee);
+                    }
+                }
+            }
+            return "";
+        }
