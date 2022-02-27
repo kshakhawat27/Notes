@@ -1,0 +1,99 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace GPMS.Data.DbModels
+{
+    [Table("Item", Schema = "inv")]
+    public class Item
+    {
+        [Key]
+        public Int64 Id { get; set; }
+
+        public Int64? BrandId { get; set; }
+        public Int64? ModelId { get; set; }
+        public Int64? CategoryId { get; set; }
+
+        [Display(Name = "Title")]
+        [Required(ErrorMessage = "{0} is Required")]
+        [StringLength(50, ErrorMessage = "Maximum length is {1}")]
+        public string Title { get; set; }
+
+        [Display(Name = "Code")]
+        [Required(ErrorMessage = "{0} is Required")]
+        [StringLength(50, ErrorMessage = "Maximum length is {1}")]
+        public string Code { get; set; }
+
+        [Display(Name = "Short Desc")]
+        [StringLength(50, ErrorMessage = "Maximum length is {1}")]
+        public string ShortDesc { get; set; }
+
+        [Display(Name = "Create By")]
+        [Required(ErrorMessage = "{0} is Required")]
+        public Int64 CreateBy { get; set; }
+
+        [Display(Name = "Create Date")]
+        [Required(ErrorMessage = "{0} is Required")]
+        public DateTime CreateDate { get; set; }
+
+        [Display(Name = "Update By")]
+        public Int64? UpdateBy { get; set; }
+
+        [Display(Name = "Update Date")]
+        public DateTime? UpdateDate { get; set; }
+
+        [Display(Name = "Is Active")]
+        [Required(ErrorMessage = "{0} is Required")]
+        public bool IsActive { get; set; }
+
+        
+
+        [ForeignKey("ModelId")]
+        public virtual Model Model { get; set; }
+
+        [ForeignKey("CategoryId")]
+        public virtual Category Category { get; set; }
+
+
+        [ForeignKey("BrandId")]
+        public virtual Brand Brand { get; set; }
+
+
+    }
+}
+----------------------------------------------------
+   public async Task<List<Item>> GetByFilter(BaseSearchFilter filter)
+        {
+            try
+            {
+                var query = db.Items
+                    .Include(f=>f.Model)
+                    .Include(f => f.Category)
+                    .Include(f=>f.Brand)
+                    .Where(f => f.IsActive &&
+                                (
+                                    filter.SearchTerm == null || filter.SearchTerm == ""
+                                ||  f.Code == filter.SearchTerm
+                                ||  f.Title == filter.SearchTerm
+                                ||  f.Category.Name == filter.SearchTerm
+                                ||  f.Model.Name == filter.SearchTerm
+                                )
+                          );
+
+                var filteredList = await query.Skip(filter.PageSize * (filter.PageNumber - 1)).Take(filter.PageSize).ToListAsync();
+
+                int totalCount = await query.CountAsync();
+                filter.TotalCount = totalCount;
+
+                return filteredList;
+             
+            }
+            catch (Exception ex)
+            {
+                return new List<Item>();
+            }
+        }

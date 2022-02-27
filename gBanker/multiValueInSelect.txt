@@ -1,0 +1,22 @@
+                @Html.DropDownListFor(model => model.RoleIDs, roleList, new { @class = "form-control chosen", @multiple = "multiple" })
+
+
+controller: ApproveCelling
+js------
+var approveCellingManager = {
+    init: function () {
+        this.initChoosen();
+    },
+
+    initChoosen: function () {
+        if ($(".chosen").length > 0) {
+            jQuery(".chosen").chosen();
+        }
+    },
+
+
+}
+
+$(function () {
+    approveCellingManager.init();
+});

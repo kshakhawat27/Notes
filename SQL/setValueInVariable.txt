@@ -1,0 +1,3 @@
+
+	SELECT @BasicSalary = ComponentAmount FROM #TempSalary WHERE ComponentName = 'Basic Salary'
+	SET @BasicSalary = ISNULL(@BasicSalary, 0)
