@@ -1,0 +1,52 @@
+handleInputItem = (event) => {
+
+        const target = event.target;
+        const value = target.value;
+        const name = target.name;
+
+        this.setState({
+            [name]: value,
+        });
+
+        var viewItems = this.state.viewItems;
+        var items = this.state.items;
+        var itemList = this.state.itemList;
+
+        var val = parseInt(value);
+
+        const isItemExist = _.some(itemList,
+            (oItem) => {
+                return oItem.itemId === val;
+            }
+        );
+
+        if (isItemExist) {
+            Toaster.Notify({ type: ToasterTypeConstants.Warning, message: " Already Added" });
+            return;
+        }
+
+        var selectedIndex = items.findIndex(function (x) { return x.value == val; });
+        var label = this.state.items[selectedIndex].label;
+
+        var viewItem =
+        {
+            label: label,
+            itemId: val
+        }
+
+        viewItems.push(viewItem);
+
+        const eachItem = {
+            itemId: val,
+            requestQty: 0,
+            ApprovedStatus: 'ok'
+        }
+
+        itemList.push(eachItem);
+
+        this.setState({
+            viewItems: viewItems,
+            itemName: '',
+        });
+
+    }

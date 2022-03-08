@@ -1,0 +1,374 @@
+import React, { Component, Fragment } from "react";
+import { AuthenticationService } from "../../../shared/services/authentications/AuthenticationService";
+import { ItemService } from "../../../shared/services/items/ItemService";
+import Breadcrumb from "../../mics/Breadcrumb";
+import { ValidateForm } from "../../../shared/utilities/ValidateForm";
+import { Toaster } from "../../../shared/utilities/Toaster";
+import { ToasterTypeConstants } from "../../../shared/utilities/GlobalConstrants";
+import withAuth from "../../../shared/hoc/AuthComponent";
+import Select from 'react-select';
+import { RequisitionService } from "../../../shared/services/requisitions/ResquisitionService";
+import _ from 'lodash';
+import { StoreService } from "../../../shared/services/stores/StoreService";
+import Autosuggest from 'react-autosuggest';
+
+export class RequisitionAdd extends Component {
+    constructor(props) {
+        super(props);
+
+        this.state = {
+            itemName: "",
+            quantity: 0,
+            referenceNo: "",
+            date: "",
+            items: [],
+            itemList: [],
+            viewItems: [],
+            stores: [],
+            fromStoreId: 0,
+            toStoreId: 0
+        }
+    }
+
+    componentDidMount = async () => {
+
+        let resToken = AuthenticationService.GetToken();
+        if (!resToken.isSuccess) {
+            Toaster.Notify({ type: ToasterTypeConstants.Warning, message: "Warning! Session Expired. Try to login first." });
+            return;
+        }
+
+        //get item list for ddl
+        let item = await this.getItemList(resToken.token).then(res => { return res });
+        let store = await this.getStoreList(resToken.token).then(res => { return res });
+
+        this.setState({
+            items: item.data,
+            stores: store.data
+        })
+    }
+
+    getItemList = async (token) => {
+
+        let filteredList = await ItemService.GetDropdownList(token);
+
+        return filteredList;
+    }
+    getStoreList = async (token) => {
+
+        let filteredList = await StoreService.GetDropdownList(token);
+
+        return filteredList;
+    }
+
+    handleInputChange = (event) => {
+
+        const target = event.target;
+        const value = target.value;
+        const name = target.name;
+
+        this.setState({
+            [name]: value,
+        });
+    }
+
+    handleInputItem = (event) => {
+
+        const target = event.target;
+        const value = target.value;
+        const name = target.name;
+
+        this.setState({
+            [name]: value,
+        });
+
+        var viewItems = this.state.viewItems;
+        var items = this.state.items;
+        var itemList = this.state.itemList;
+
+        var val = parseInt(value);
+
+        const isItemExist = _.some(itemList,
+            (oItem) => {
+                return oItem.itemId === val;
+            }
+        );
+
+        if (isItemExist) {
+            Toaster.Notify({ type: ToasterTypeConstants.Warning, message: " Already Added" });
+            return;
+        }
+
+        var selectedIndex = items.findIndex(function (x) { return x.value == val; });
+        var label = this.state.items[selectedIndex].label;
+
+        var viewItem =
+        {
+            label: label,
+            itemId: val
+        }
+
+        viewItems.push(viewItem);
+
+        const eachItem = {
+            itemId: val,
+            requestQty: 0,
+            ApprovedStatus: 'ok'
+        }
+
+        itemList.push(eachItem);
+
+        this.setState({
+            viewItems: viewItems,
+            itemName: '',
+        });
+
+    }
+
+    handleInputQuantity = (event, item) => {
+
+        const requestQty = event.target.value;
+        const requestQtyName = event.target.name;
+
+        if (!requestQty || requestQty === '')
+            return;
+
+        var itemList = this.state.itemList;
+
+        _.forEach(itemList, (oitem) => {
+            if (oitem.itemId === item.itemId)
+                oitem.requestQty = parseInt(requestQty)
+        })
+
+        this.setState({
+            [requestQtyName]: requestQty
+        })
+
+        console.log(itemList)
+    }
+
+    handleItemDeleted = (event, item) => {
+        var itemList = this.state.itemList;
+        var viewItems = this.state.viewItems;
+
+        var itemId = item.itemId;
+
+        var selectedIndex = itemList.findIndex(function (x) { return x.itemId == itemId; });
+
+        console.log(selectedIndex);
+
+        itemList.splice(selectedIndex, 1);
+        viewItems.splice(selectedIndex, 1);
+
+        this.setState({
+            itemList: itemList,
+            viewItems: viewItems
+        });
+        console.log(itemList)
+    }
+
+    handleSubmit = async (e) => {
+
+        var itemList = this.state.itemList;
+        var referenceNo = this.state.referenceNo;
+        var date = this.state.date;
+        var fromStoreId = this.state.fromStoreId;
+        var toStoreId = this.state.toStoreId;
+      
+        // itemList.push(referenceNo, date, RequisitionStatus);
+        let resToken = AuthenticationService.GetToken();
+        if (!resToken.isSuccess) {
+            Toaster.Notify({ type: ToasterTypeConstants.Warning, message: "Warning! Session Expired. Try to login first." });
+            return;
+        }
+        console.log(itemList);
+
+        const model = {
+            RequisitionNo: referenceNo,
+            RequisitionDate: date,
+            FromStoreId:fromStoreId,
+            ToStoreId:toStoreId,
+            IsActive: true,
+            RequisitionStatus: 'ok',
+            RequisitionDetail: itemList
+        }
+
+        console.log(model);
+
+        const res = await RequisitionService.Add(model, resToken.token);
+
+        if (res.response.isSuccess) {
+            this.setState({
+                itemName: "",
+                quantity: "",
+                referenceNo: "",
+                date: "",
+                itemList: [],
+                viewItems: []
+            })
+            Toaster.Notify({ type: ToasterTypeConstants.Success, message: res.response.message });
+            return;
+        }
+
+        Toaster.Notify({ type: ToasterTypeConstants.Warning, message: res.response.message });
+    }
+
+    // renderRows=()=> {
+
+    //     const { viewItems, quantity} = this.state;   
+
+
+    // }
+
+    render() {
+        const { itemName, items, date, referenceNo, viewItems, stores, fromStoreId, toStoreId } = this.state;
+
+
+        return (
+            <Fragment>
+                <div className="container-fluid">
+                    <Breadcrumb
+                        BreadcrumbParams={{
+                            header: "Add Requisition",
+                            title: "Requisition Add",
+                            isDashboardMenu: false,
+                            isThreeLayer: true,
+                            threeLayerTitle: "Requisitions",
+                            threeLayerLink: "/model",
+                        }}
+                    />
+
+                    <div className="row">
+                        <div className="col-xl-12 col-lg-12 col-sm-12">
+                            <div className="row align-items-center">
+                                <div className="card-style mb-30" style={{ marginBottom: "0px" }}>
+                                    <div className="row">
+                                        <div className="col-md-4">
+                                            <div className="input-style-1">
+                                                <label>
+                                                    <b>Reference No.</b>
+                                                </label>
+                                                <input type="text" name="referenceNo" id="referenceNo" value={referenceNo} onChange={this.handleInputChange} />
+
+                                            </div>
+                                        </div>
+                                        <div className="col-md-4">
+                                            <div className="input-style-1">
+                                                <label>
+                                                    <b>Date</b>
+                                                </label>
+                                                <input type="date" name="date" id="date" value={date} onChange={this.handleInputChange} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="row">
+                                        <div className="col-md-4">
+                                            <div className="input-style-1">
+                                                <label> <b>From Store</b> </label>
+                                                <select className="form-control" name="fromStoreId" id="fromStoreId" onChange={this.handleInputChange} value={fromStoreId}>
+                                                    <option value='0'> Select One</option>
+                                                    {stores.map((item, index) => {
+                                                        return (
+                                                            <option key={index} value={item.value}>{item.label}</option>
+                                                        )
+                                                    })}
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div className="col-md-4">
+                                            <div className="input-style-1">
+                                                <label> <b>To Store</b> </label>
+                                                <select className="form-control" name="toStoreId" id="toStoreId" onChange={this.handleInputChange} value={toStoreId}>
+                                                    <option value='0'> Select One</option>
+                                                    {stores.map((item, index) => {
+                                                        return (
+                                                            <option key={index} value={item.value}>{item.label}</option>
+                                                        )
+                                                    })}
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="row">
+                                        <div className="col-md-4">
+                                            <div className="input-style-1">
+                                                <label>
+                                                    <b>Item </b>
+                                                </label>
+                                                <select className="form-control" name="itemName" id="itemName" onChange={this.handleInputItem} value={itemName}>
+                                                    <option value=""> Select One</option>
+                                                    {items.map((item, index) => {
+                                                        return (
+                                                            <option key={index} value={item.value}>{item.label}</option>
+                                                        )
+                                                    })}
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="row">
+                        <div className="col-xl-12 col-lg-12 col-sm-12">
+                            <div className="row align-items-center">
+                                <div className="card-style mb-30" style={{ marginBottom: "0px" }}>
+                                    <div className="table-wrapper table-responsive">
+                                        <table className="table striped-table">
+                                            <thead className="tbHead" style={{ background: '#0d6efd', color: 'white', textAlign: 'Center', fontSize: 'small' }}>
+                                                <tr>
+                                                    <th>
+                                                        Item
+                                                    </th>
+                                                    <th>
+                                                        Quantity
+                                                    </th>
+                                                    <th>
+                                                        Actions
+                                                    </th>
+                                                    <th> </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody style={{ textAlign: 'Center' }}>
+                                                {viewItems.map((item, i) => {
+                                                    return (
+                                                        <tr key={`item-${i}`}>
+                                                            <td className="p-2" >
+                                                                <input className="form-control" readOnly type="text" defaultValue={item.label} />
+                                                            </td>
+                                                            <td className="p-2">
+                                                                <input className="form-control" type="text" name="quantity" id="quantity" onChange={(event) => this.handleInputQuantity(event, item)} autoComplete="off" />
+                                                            </td>
+                                                            <td className="p-2">
+                                                                <button className="main-btn danger-btn btn-hover" onClick={(event) => this.handleItemDeleted(event, item)} >
+                                                                    Delete
+                                                                </button>
+                                                            </td>
+                                                            <td>
+
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })
+                                                }
+                                            </tbody>
+                                        </table>
+                                        <div className="row">
+                                            <div className="col-md-2" style={{ paddingTop: "28px" }}>
+                                                <div className=" button-group d-flex justify-content-right flex-wrap">
+                                                    <button className="main-btn primary-btn btn-hover w-60 text-center" onClick={this.handleSubmit}> Submit </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </Fragment >
+        );
+    }
+}
+export default withAuth(RequisitionAdd);

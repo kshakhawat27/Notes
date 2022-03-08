@@ -1,0 +1,14 @@
+var items = this.state.items;
+
+        var item =
+        {
+            itemName: this.state.itemName,
+            quantity: this.state.quantity
+        }
+
+        items.push(item);
+
+        this.setState({
+            items: items,
+            itemName: ''
+        });

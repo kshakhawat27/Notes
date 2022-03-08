@@ -1,0 +1,242 @@
+import React, { Component, Fragment } from "react";
+import Breadcrumb from "../../mics/Breadcrumb";
+
+export class RequisitionAdd extends Component {
+    constructor(props) {
+        super(props);
+        const options = [
+            { value: 1, label: 'Chocolate' },
+            { value: 2, label: 'Strawberry' },
+            { value: 3, label: 'Vanilla' }
+        ]
+
+        this.state = {
+            itemName: "",
+            quantity: 0,
+            referenceNo: "",
+            date: "",
+            items: [],
+            test:[],
+            ItemId:0,
+            options:options
+          
+        }
+
+
+    }
+
+
+    handleInputChange = (event) => {
+
+        const target = event.target;
+        console.log(this.state.options[1].label);
+        const value = target.value;
+        const name = target.name;
+
+        this.setState({
+            [name]: value,
+        });
+        
+        var items = this.state.items;
+
+        var item =
+        {
+            ItemId: value
+        }
+
+        items.push(item);
+
+        this.setState({
+            items: items,
+            itemName: ''
+        });
+    
+    }
+
+    handleClick = () => {
+        var items = this.state.items;
+
+        var item =
+        {
+            itemName: this.state.itemName,
+            quantity: this.state.quantity
+        }
+
+        items.push(item);
+
+        this.setState({
+            items: items,
+            quantity: 0,
+            itemName: ''
+        });
+        var test=this.state.test;
+        var a=this.state.referenceNo;
+        var b=this.state.date;
+        test.push(a);
+        test.push(b);
+        test.push(items)
+        console.log(test)
+    }
+
+    handleItemDeleted = (i) => {
+        var items = this.state.items;
+
+        items.splice(i, 1);
+
+        this.setState({
+            items: items
+        });
+        console.log(items)
+    }
+
+    renderRows() {
+           
+        const { items } = this.state;
+        var context = this;
+        return items.map(function (o, i) {
+            return (
+                <tr key={"item-" + i}>
+                    <td className="p-2" >
+                        <input className="form-control" readOnly type="text" defaultValue={o.ItemId} />
+                    </td>
+                    <td className="p-2">
+                        <input className="form-control" type="text" defaultValue='0' />
+                    </td>
+                    <td className="p-2">
+                        <button className="main-btn danger-btn btn-hover" onClick={context.handleItemDeleted.bind(context, i)} >
+                            Delete
+                        </button>
+                    </td>
+                    <td></td>
+                </tr>
+            );
+        });
+    }
+
+    render() {
+        const { itemName, options, date, referenceNo ,} = this.state;
+      
+
+        return (
+            <Fragment>
+                <div className="container-fluid">
+                    <Breadcrumb
+                        BreadcrumbParams={{
+                            header: "Add Requisition",
+                            title: "Requisition Add",
+                            isDashboardMenu: false,
+                            isThreeLayer: true,
+                            threeLayerTitle: "Requisitions",
+                            threeLayerLink: "/model",
+                        }}
+                    />
+
+                    <div className="row">
+                        <div className="col-xl-12 col-lg-12 col-sm-12">
+                            <div className="row align-items-center">
+                                <div className="card-style mb-30" style={{ marginBottom: "0px" }}>
+                                    <div className="row">
+                                        <div className="col-md-4">
+                                            <div className="input-style-1">
+                                                <label>
+                                                    <b>Reference No.</b>
+                                                </label>
+                                                <input type="text" name="referenceNo" id="referenceNo" value={referenceNo} onChange={this.handleInputChange} />
+
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                    <div className="row">
+                                        <div className="col-md-4">
+                                            <div className="input-style-1">
+                                                <label>
+                                                    <b>Date</b>
+                                                </label>
+                                                <input type="date" name="date" id="date" value={date} onChange={this.handleInputChange} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="row">
+                                        <div className="col-md-4">
+                                            <div className="input-style-1">
+                                                <label>
+                                                    <b>Item </b>
+                                                </label>
+                                                {/* <input type="text" name="itemName" id="itemName" value={itemName} onChange={this.handleInputChange} /> */}
+                                                <select className="form-control" name="itemName" id="itemName" onChange={this.handleInputChange} value={itemName}>
+                                                        <option value=""> Select One</option>
+                                                        {options.map((item, index) => {
+                                                            return (
+                                                                <option key={index} value={item.value}>{item.label}</option>
+                                                            )
+                                                        })}
+                                                    </select>
+
+                                            </div>
+                                        </div>
+                                        {/* <div className="col-md-4">
+                                            <div className="input-style-1">
+                                                <label>
+                                                    <b>Quantity</b>
+                                                </label>
+                                                <input type="text" name="quantity" id="quantity" value={quantity} onChange={this.handleInputChange} />
+
+                                            </div>
+                                        </div> */}
+                                        <div className="col-md-2" style={{ paddingTop: "28px" }}>
+                                            <div className=" button-group d-flex justify-content-left flex-wrap">
+                                                <button className="main-btn primary-btn btn-hover w-60 text-center" onClick={this.handleClick}> + </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                        </div>
+                    </div>
+                    <div className="row">
+                        <div className="col-xl-12 col-lg-12 col-sm-12">
+                            <div className="row align-items-center">
+                                <div className="card-style mb-30" style={{ marginBottom: "0px" }}>
+                                    <div className="table-wrapper table-responsive">
+                                        <table className="table striped-table">
+                                            <thead className="tbHead" style={{ background: '#0d6efd', color: 'white', textAlign: 'Center', fontSize: 'small' }}>
+                                                <tr>
+                                                    <th>
+                                                        Item
+                                                    </th>
+                                                    <th>
+                                                        Quantity
+                                                    </th>
+                                                    <th>
+                                                        Actions
+                                                    </th>
+                                                    <th>
+
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody style={{ textAlign: 'Center' }}>
+                                                {this.renderRows()}
+                                            </tbody>
+                                        </table>
+                                        <div className="row">
+                                            <div className="col-md-2" style={{ paddingTop: "28px" }}>
+                                                <div className=" button-group d-flex justify-content-right flex-wrap">
+                                                    <button className="main-btn primary-btn btn-hover w-60 text-center" onClick={this.handleClick}> Submit </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </Fragment>
+        );
+    }
+}
+export default RequisitionAdd;

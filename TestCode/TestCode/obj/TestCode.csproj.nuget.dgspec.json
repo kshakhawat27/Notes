@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "E:\\Kazi\\TestCode\\TestCode\\TestCode.csproj": {}
+    "D:\\Notes\\TestCode\\TestCode\\TestCode.csproj": {}
   },
   "projects": {
-    "E:\\Kazi\\TestCode\\TestCode\\TestCode.csproj": {
+    "D:\\Notes\\TestCode\\TestCode\\TestCode.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "E:\\Kazi\\TestCode\\TestCode\\TestCode.csproj",
+        "projectUniqueName": "D:\\Notes\\TestCode\\TestCode\\TestCode.csproj",
         "projectName": "TestCode",
-        "projectPath": "E:\\Kazi\\TestCode\\TestCode\\TestCode.csproj",
+        "projectPath": "D:\\Notes\\TestCode\\TestCode\\TestCode.csproj",
         "packagesPath": "C:\\Users\\Software\\.nuget\\packages\\",
-        "outputPath": "E:\\Kazi\\TestCode\\TestCode\\obj\\",
+        "outputPath": "D:\\Notes\\TestCode\\TestCode\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\Software\\AppData\\Roaming\\NuGet\\NuGet.Config",
@@ -54,7 +54,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\5.0.404\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\5.0.405\\RuntimeIdentifierGraph.json"
         }
       }
     }

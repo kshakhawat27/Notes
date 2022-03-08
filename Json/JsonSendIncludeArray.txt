@@ -1,0 +1,17 @@
+
+
+{
+    "RequisitionNo":"Test Reference",
+    "RequisitionDetail":[
+    {
+     "itemId": 986,
+     "ApprovedStatus":"Ok"
+    },
+     {
+     "itemId": 987,
+     "ApprovedStatus":"Ok"
+    }
+    ],
+    "RequisitionStatus":"Ok"
+
+}

@@ -1,0 +1,21 @@
+ handleInputChange2 = (event) => {
+
+        const value = event.value;
+        const name = this.state.lineId;
+
+        var e=event;
+
+        e.forEach(activity => {
+            console.log(activity)
+            
+        });
+
+        this.setState({
+            lineId: value,
+        });
+    };
+
+      <Select id="lineId" onChange={this.handleInputChange2} isMulti name="lineId" className="basic-multi-select" classNamePrefix="select"
+                                                        options={lines}
+
+                                                    />

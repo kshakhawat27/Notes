@@ -1,0 +1,17 @@
+   foreach (var roleID in model.RoleIDs)
+                    {
+                        var updateApproveCelling = ApproveCellingService.GetApproveCellingbyroleAndproductId(roleID, model.ProductId);
+                        if (updateApproveCelling != null && updateApproveCelling.ApproveCellingID > 0)
+                        {
+                            int Id = (int)Convert.ToInt64(updateApproveCelling.ApproveCellingID);
+                            var updateModel = ApproveCellingService.GetById(Id);
+                            updateModel.RoleName = model.RoleName;
+                            updateModel.MinRange = model.MinRange;
+                            updateModel.MaxRange = model.MaxRange;
+                            updateModel.ProdType = model.ProdType;
+                            updateModel.ProductId = model.ProductId;
+
+                            ApproveCellingService.Update(updateModel);
+
+                            continue;
+                        }
