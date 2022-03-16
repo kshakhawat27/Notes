@@ -1,9 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+
+using System.Reflection;
 
 namespace TestCode
 {
-    class Program
+    public static class Program
     {
         public static int test()
         {
@@ -22,16 +26,16 @@ namespace TestCode
 
             return red;
 
-        
+
         }
 
-        public static int largest(int [] Array)
+        public static int largest(int[] Array)
         {
-            var maxNumber=0;
+            var maxNumber = 0;
 
-            if(Array!=null)
+            if (Array != null)
             {
-                for(int i=0;i<Array.Length;i++)
+                for (int i = 0; i < Array.Length; i++)
                 {
                     if (maxNumber < Array[i])
                         maxNumber = Array[i];
@@ -40,6 +44,36 @@ namespace TestCode
 
             return maxNumber;
         }
+        public static void BreakLoop()
+        {
+            var res = "before";
+            for (int i = 5; i < 12; i++)
+          {              
+                Console.WriteLine(i);
+                if (i == 10)
+                {
+                    res = "InLoop";
+                    break;
+                }              
+            };
+            Console.WriteLine(res);
+        }
+        public static void ReaminQty()
+        {
+            var remainqty = 500;
+            while (remainqty != 0)
+            {
+                remainqty = ReturnQty(remainqty);
+                if (remainqty == 0) break;
+                Console.WriteLine(remainqty);
+            }
+        }
+        public static int ReturnQty(int remainqty)
+        {
+
+            return (remainqty - 50);
+        }
+      
         static void Main(string[] args)
         {
             //int[] a = { 1, 3, 5, 7 };
@@ -54,12 +88,44 @@ namespace TestCode
 
             //int maxNumber = largest(a);
             //Console.WriteLine(maxNumber);
-            ModelCRUD model = new ModelCRUD();
-            model.num = 2;
-            model.Code = "0032";
-            CRUD.Savevalue(model);
+            //ModelCRUD model = new ModelCRUD();
+            //model.num = 2;
+            //model.Code = "0032";
+            //CRUD.Savevalue(model);
+            ReaminQty();
+            BreakLoop();
+            var test = new List<dynamic>();
 
+            List <string[]> list= new List<string[]>();
+
+            var test1 = new List<TestModel>()
+            {
+                new TestModel{ id=15}
+            };
+
+           
+           var t= ToDataTable(test1);
         }
+
+        public static DataTable ToDataTable<T>(this IList<T> list)
+        {
+            PropertyDescriptorCollection props = TypeDescriptor.GetProperties(typeof(T));
+            DataTable table = new DataTable();
+            for (int i = 0; i < props.Count; i++)
+            {
+                PropertyDescriptor prop = props[i];
+                table.Columns.Add(prop.Name, Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType);
+            }
+            object[] values = new object[props.Count];
+            foreach (T item in list)
+            {
+                for (int i = 0; i < values.Length; i++)
+                    values[i] = props[i].GetValue(item) ?? DBNull.Value;
+                table.Rows.Add(values);
+            }
+            return table;
+        }
+
 
 
     }
@@ -67,6 +133,7 @@ namespace TestCode
     public class TestModel
     {
         public int? id { get; set; }
+      
     }
 
 }

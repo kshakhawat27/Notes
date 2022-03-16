@@ -15,3 +15,20 @@
     "RequisitionStatus":"Ok"
 
 }
+
+{
+    "'FromStoreId'": "1",
+    "IsActive": true,
+    "RequisitionDate": "2022-03-14",
+    "RequisitionDetail":
+    [{
+        "itemId": 1077, 
+        "requestQty": 100,
+        "approvedStatus":"Pending"
+        }
+    ]
+     ,
+     "RequisitionNo": "sdfsdfsdf",
+      "RequisitionStatus": "Pending",
+       "ToStoreId": "2"
+}
