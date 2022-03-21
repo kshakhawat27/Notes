@@ -1,0 +1,29 @@
+ private async Task<int> UpdateStockInTransaction(StockInTransaction stockInTransaction, int remainingQty, long toStore, long createBy)
+        {
+            var outQuantity = 0;
+           
+            if (stockInTransaction.Current_Quantity > remainingQty)
+            {
+                outQuantity = remainingQty;
+                remainingQty = 0;
+            }
+            else
+            {
+                outQuantity = (int)stockInTransaction.Current_Quantity;
+                remainingQty = remainingQty - outQuantity;
+            }
+
+            //var qty = stockInTransaction.Out_Quantity;
+            stockInTransaction.Out_Quantity = stockInTransaction.Out_Quantity + outQuantity;
+
+            //var Current_Quantity = stockInTransaction.Current_Quantity - stockInTransaction.Out_Quantity;
+
+            //stockInTransaction.Current_Quantity = Current_Quantity > 0 ? (stockInTransaction.Stock_Quantity - stockInTransaction.Out_Quantity) : 0;
+            stockInTransaction.Current_Quantity = stockInTransaction.Stock_Quantity - stockInTransaction.Out_Quantity;
+            await StockInTransactionService.Update(stockInTransaction);
+            await AddNewStockInTransaction(stockInTransaction, toStore, createBy, outQuantity);
+            return remainingQty;
+
+
+
+        }
