@@ -1,0 +1,10 @@
+ var query = db.Requisitions
+                     .Include(f => f.FromStore)
+                     .Include(f => f.ToStore)
+                     .Include(f => f.Model)
+                     .Join(db.Productions, u => u.Id, uir => uir.RequisitionId,
+                     (u, uir) => new { u, uir })
+                    .Where(f => f.u.IsActive &&
+                                    (filter.SearchTerm == null || filter.SearchTerm == "")
+                                    && (f.u.RequisitionFor == "WIP")
+                                    );
