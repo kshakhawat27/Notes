@@ -12,10 +12,11 @@ namespace TestCode
     {
         public static int Savevalue(ModelCRUD model)
         {
+            int? a = 0;
             try
             {
 
-                if (model.num.HasValue && !string.IsNullOrEmpty(model.Code))
+                if (a.HasValue && !string.IsNullOrEmpty(model.Code))
                 {
                     model.num = model.num ?? 0;
                     Console.Write(model.num + "Code is Empty");

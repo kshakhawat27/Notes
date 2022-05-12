@@ -1,0 +1,13 @@
+ db.Requisitions
+                     .Include(f => f.FromStore)
+                     .Include(f => f.ToStore)
+                     .Include(f => f.Model)
+                     .GroupJoin(db.Productions, requisition => requisition.Id, production => production.RequisitionId,
+                     (requisition, production) => new { requisition, production })
+                     .SelectMany(
+                          f => f.production.DefaultIfEmpty(),
+                          (x, y) => new { requisition = x.requisition, production = y })
+                          .Where(f => f.requisition.IsActive &&
+                                (filter.SearchTerm == null || filter.SearchTerm == "")
+                                && (f.requisition.RequisitionFor == "WIP")
+                                );

@@ -1,0 +1,27 @@
+USE [GPMS]
+GO
+/****** Object:  UserDefinedFunction [dbo].[fn_stationWiseData]    Script Date: 4/3/2022 3:26:16 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER function [dbo].[fn_stationWiseData](@stationId bigInt)      
+returns table       
+as      
+return(SELECT
+		l.Name AS Line
+	   ,m.Name AS Model
+	   ,COUNT(l.Name) AS Issue
+	FROM pro.ProductionDaily pd
+	LEFT JOIN con.Line l
+		ON l.Id = pd.lineId
+	JOIN pro.Production p
+		ON p.Id = pd.ProductionId
+	JOIN inv.Requisition r
+		ON r.Id = p.RequisitionId
+	LEFT JOIN con.Model m
+		ON m.Id = r.ModelId
+	WHERE pd.StationId = 517
+	GROUP BY l.Name
+			,m.Name )  
+

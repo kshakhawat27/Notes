@@ -1,0 +1,42 @@
+GPMS.Core>dotnet new classlib
+
+GPMS.Core>dotnet restore
+
+GPMS.Core>dotnet build
+
+E:\Kazi\vsCode core\GPMSApi\GPMS.Core>cd ../
+
+E:\Kazi\vsCode core\GPMSApi>dotnet new sln
+
+E:\Kazi\vsCode core\GPMSApi>dotnet sln add GPMS.Core\GPMS.Core.csproj
+
+
+Data
+GPMS.Data>dotnet new classlib
+GPMSApi>dotnet sln add GPMS.Data\GPMS.Data.csproj
+GPMSApi>dotnet add ./GPMS.Data/GPMS.Data.csproj reference ./GPMS.Core/GPMS.Core.csproj
+add existing folder
+GPMS.Data>dotnet build
+/// add reference from csproj
+
+
+service
+GPMS.Service>dotnet new classlib
+GPMSApi>dotnet sln add GPMS.Service\GPMS.Service.csproj
+GPMSApi>dotnet add ./GPMS.Service/GPMS.Service.csproj reference ./GPMS.Data/GPMS.Data.csproj
+GPMS.Service>dotnet build
+
+add reference then restore then build
+add existing item
+
+Api
+GPMS.Api>dotnet new webapi
+GPMSApi>dotnet sln add GPMS.Api\GPMS.Api.csproj
+GPMSApi>dotnet add ./GPMS.Api/GPMS.Api.csproj reference ./GPMS.Service/GPMS.Service.csproj
+add reference then restore then build
+
+final
+
+GPMS.Api>dotnet run
+
+

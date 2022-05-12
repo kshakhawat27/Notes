@@ -76,8 +76,18 @@ namespace TestCode
       
         static void Main(string[] args)
         {
-            //int[] a = { 1, 3, 5, 7 };
-            //Console.WriteLine("Hello World!");
+            int[] a = { 1, 3, 5, 7 };
+
+            for(int i=0; i <= a.Length-1; i++)
+            {
+                Console.Write($"Array,{a[i]}");
+            }
+            //foreach(var item in a)
+            //{
+            //    Console.WriteLine(item);
+            //}
+            ////Console.WriteLine("Hello World!");
+            ///
             //test();
             //var red = test2();
 

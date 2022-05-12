@@ -1,0 +1,1011 @@
+using GPMS.Core.Api.Infrastructures;
+using GPMS.Core.Filters;
+using GPMS.Core.Utilities;
+using GPMS.Data.DbModels;
+using GPMS.Service.Items;
+using GPMS.Service.Productions;
+using GPMS.Service.RequisitionDetails;
+using GPMS.Service.StockIns;
+using GPMS.Service.StockInTransactions;
+using GPMS.Service.StockOutTransactions;
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Transactions;
+
+namespace GPMS.Service.Requisitions
+{
+    public class RequisitionService : IRequisitionService
+    {
+        #region Private Members
+        private readonly GPMSContext db;
+        private readonly IStockInTransactionService StockInTransactionService;
+        private readonly IStockOutTransactionService StockOutTransactionService;
+        private readonly IRequisitionDetailService RequisitionDetailsService;
+        private readonly IItemService itemService;
+        private readonly IStockInService stockInService;
+        private readonly IProductionService productionService;
+        #endregion
+
+        #region ctor
+
+        public RequisitionService(GPMSContext db, IStockInTransactionService StockInTransactionService,
+         IRequisitionDetailService RequisitionDetailsService, IItemService itemService, IStockInService stockInService,
+         IProductionService productionService, IStockOutTransactionService StockOutTransactionService)
+        {
+            this.db = db;
+            this.StockInTransactionService = StockInTransactionService;
+            this.RequisitionDetailsService = RequisitionDetailsService;
+            this.StockOutTransactionService = StockOutTransactionService;
+            this.itemService = itemService;
+            this.stockInService = stockInService;
+            this.productionService = productionService;
+        }
+
+        #endregion
+
+        #region Public Methods
+
+        public async Task<List<Requisition>> GetByFilter(BaseSearchFilter filter)
+        {
+            try
+            {
+
+                var query = db.Requisitions
+                     .Include(f => f.FromStore)
+                     .Include(f => f.ToStore)
+                     .Include(f => f.Model)
+                    .Where(f => f.IsActive &&
+                                    (filter.SearchTerm == null || filter.SearchTerm == "")
+                                    && (f.RequisitionFor == "Manual")
+                                    ).OrderByDescending(f => f.Id);
+
+                var filteredList = await query.Skip(filter.PageSize * (filter.PageNumber - 1)).Take(filter.PageSize).ToListAsync();
+
+                int totalCount = await query.CountAsync();
+                filter.TotalCount = totalCount;
+                return filteredList;
+            }
+            catch (Exception ex)
+            {
+                return new List<Requisition>();
+            }
+        }
+        public async Task<object> GetByFilterModelWise(BaseSearchFilter filter)
+        {
+            try
+            {
+
+                var query = db.Requisitions
+                     .Include(f => f.FromStore)
+                     .Include(f => f.ToStore)
+                     .Include(f => f.Model)
+                     .OrderByDescending(f => f.Id)
+                     .GroupJoin(db.Productions, requisition => requisition.Id, production => production.RequisitionId,
+                     (requisition, production) => new { requisition, production })
+                     .SelectMany(
+                          f => f.production.DefaultIfEmpty(),
+                          (x, y) => new { requisition = x.requisition, production = y })
+                          .Where(f => f.requisition.IsActive &&
+                                (filter.SearchTerm == null || filter.SearchTerm == "")
+                                && (f.requisition.RequisitionFor == "WIP")
+                                );
+                var filteredList = await query.Skip(filter.PageSize * (filter.PageNumber - 1)).Take(filter.PageSize).ToListAsync();
+
+                int totalCount = await query.CountAsync();
+                filter.TotalCount = totalCount;
+                return filteredList;
+            }
+            catch (Exception ex)
+            {
+                return new List<Requisition>();
+            }
+        }
+
+        public async Task<List<DropdownListModel>> GetListForDropdown()
+        {
+            try
+            {
+
+                var query = db.Requisitions.Where(f => f.IsActive);
+                var filteredList = await query.Select(f => new DropdownListModel { Value = Convert.ToInt32(f.Id)/*, Label = f.Name*/ }).ToListAsync();
+
+                return filteredList;
+            }
+            catch (Exception ex)
+            {
+                return new List<DropdownListModel>();
+            }
+        }
+
+        public async Task<Requisition> GetRequisitionById(long id)
+        {
+            try
+            {
+                var single = await GetById(id);
+                return single;
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
+        }
+        public async Task<BaseResponse> Add(Requisition requisition)
+        {
+            var response = new BaseResponse { };
+            try
+            {
+                db.Requisitions.Add(requisition);
+                await db.SaveChangesAsync();
+
+                response.IsSuccess = true;
+                response.Message = "Success! Model Added";
+                return response;
+            }
+            catch (Exception ex)
+            {
+                response.Message = "Error! Error On Adding";
+                return response;
+            }
+        }
+
+        public async Task<BaseResponse> Update(Requisition requisition)
+        {
+            var response = new BaseResponse { };
+            try
+            {
+                var currentDate = DateTime.Now;
+                var updateRequisition = await GetById(requisition.Id);
+
+                if (updateRequisition == null)
+                {
+                    response.Message = "Warning! Requisition not found";
+                    return response;
+                }
+
+                updateRequisition.RequisitionStatus = requisition.RequisitionStatus;
+                updateRequisition.ItemQuantity = requisition.ItemQuantity;
+                updateRequisition.UpdateBy = requisition.CreateBy;
+                updateRequisition.UpdateDate = currentDate;
+
+                await db.SaveChangesAsync();
+
+                response.IsSuccess = true;
+                response.Message = "Success! Model Updated";
+                return response;
+            }
+            catch (Exception ex)
+            {
+                response.Message = "Error! Error On Updating";
+                return response;
+            }
+        }
+
+        public async Task<BaseResponse> Delete(Requisition requisition)
+        {
+            var response = new BaseResponse { };
+            try
+            {
+                var currentDate = DateTime.Now;
+                var deleteRequisition = await GetById(requisition.Id);
+
+                if (deleteRequisition == null)
+                {
+                    response.Message = "Warning! Model not found";
+                    return response;
+                }
+
+                deleteRequisition.IsActive = false;
+                deleteRequisition.UpdateBy = requisition.UpdateBy;
+                deleteRequisition.UpdateDate = currentDate;
+
+                await db.SaveChangesAsync();
+
+                response.IsSuccess = true;
+                response.Message = "Success! Delete Completed";
+                return response;
+            }
+            catch (Exception ex)
+            {
+                response.Message = "Error! Error On Deleting Model";
+                return response;
+            }
+        }
+        #endregion
+
+        #region AddRequisition
+
+        public async Task<RequisitionResponse> AddRequisitionItemDetails(Requisition requisition)
+        {
+            var response = new RequisitionResponse { IsSuccess = true };
+
+            using (var ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+            {
+                try
+                {
+                    long requisitionId = await AddRequisition(requisition);
+
+                    if (requisitionId <= 0)
+                    {
+                        response.IsSuccess = false;
+                        response.Message = "Warning! There was an error while adding";
+                    }
+
+                    var requisitionStatus = requisition.RequisitionStatus;
+                    var createBy = requisition.CreateBy;
+
+                    foreach (var item in requisition.RequisitionDetail)
+                    {
+                        await AddRequisitionDetails(requisitionId, requisitionStatus, createBy, item);
+                    }
+                    await db.SaveChangesAsync();
+
+                }
+                catch (Exception ex)
+                {
+                    response.IsSuccess = false;
+                    response.Message = "Error! Error On adding item details";
+                }
+
+                if (response.IsSuccess)
+                {
+                    ts.Complete();
+                    response.Message = "Requision Successfully Added";
+                }
+
+                ts.Dispose();
+
+
+            }
+            return response;
+        }
+
+        public async Task<RequisitionResponse> ApproveRequisitionItemDetails(Requisition requisition)
+        {
+            var response = new RequisitionResponse { IsSuccess = true };
+
+
+            using (var ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+            {
+                try
+                {
+                    var isUpdated = await Update(requisition);
+
+                    if (isUpdated.IsSuccess == false)
+                    {
+                        response.IsSuccess = false;
+                        response.Message = "Warning! There was an error while Updating Status";
+                    }
+
+                    if (isUpdated.IsSuccess)
+                    {
+
+                        if (requisition.RequisitionStatus == "Rejected")
+                        {
+                            response.IsSuccess = false;
+                            response.Message = "Warning! Requistion Rejected";
+                        }
+
+                        if (response.IsSuccess)
+                        {
+                            var requisitionStatus = requisition.RequisitionStatus;
+                            var fromStore = requisition.FromStoreId;
+                            var toStore = requisition.ToStoreId;
+                            var createBy = requisition.CreateBy;
+                            int index = 0;
+                            List<int> errorList = new List<int>();
+
+                            // requisition details entry
+                            foreach (var item in requisition.RequisitionDetail)
+                            {
+                                var chkMessage = await ApproveRequisitionDetailsQty(requisitionStatus, createBy, item, fromStore, toStore);
+
+                                if (!string.IsNullOrEmpty(chkMessage))
+                                {
+                                    errorList.Add(index);
+                                    response.IsSuccess = false;
+                                    response.Message = "Quantity Shortage";
+                                    response.ErrorList = errorList;
+                                    //break;
+                                }
+                                index++;
+
+                            }
+                            //await db.SaveChangesAsync();
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    response.IsSuccess = false;
+                    response.Message = "Error! Error On adding item details";
+                }
+
+                if (response.IsSuccess)
+                {
+                    await db.SaveChangesAsync();
+                    ts.Complete();
+                    response.Message = "Requision Successfully Added";
+
+                }
+
+                ts.Dispose();
+
+
+            }
+            return response;
+
+        }
+
+        public async Task<RequisitionResponse> RejectRequisitionItemDetails(Requisition requisition)
+        {
+            var response = new RequisitionResponse { IsSuccess = true };
+            try
+            {
+                var isUpdated = await Update(requisition);
+
+                if (isUpdated.IsSuccess == true)
+                {
+                    response.IsSuccess = true;
+                    response.Message = "Warning! Requistion Rejected";
+                }
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                response.IsSuccess = false;
+                response.Message = "Error in Requistion Rejected";
+                return response;
+            }
+
+        }
+
+        private async Task<long> AddRequisition(Requisition requisition)
+        {
+            long newRequisitiionId = 0;
+            try
+            {
+                db.Requisitions.Add(requisition);
+                await db.SaveChangesAsync();
+                newRequisitiionId = requisition.Id;
+                return newRequisitiionId;
+            }
+            catch (Exception ex)
+            {
+                return newRequisitiionId;
+
+            }
+        }
+        private async Task AddRequisitionDetails(long requisitionId, string requisitionStatus, long createBy, RequisitionDetail requitionDetailModel)
+        {
+            //let add new stock in transaction
+            var newRequisitionDetail = new RequisitionDetail
+            {
+                RequisitionId = requisitionId,
+                ItemId = requitionDetailModel.ItemId,
+                RequestQty = requitionDetailModel.RequestQty,
+                ApprovedQty = requitionDetailModel.RequestQty,
+                ApprovedStatus = requisitionStatus,
+                IsActive = true,
+                CreateBy = createBy,
+                CreateDate = System.DateTime.Now
+            };
+
+            db.RequisitionDetails.Add(newRequisitionDetail);
+            //await db.SaveChangesAsync();
+        }
+        private async Task<String> ApproveRequisitionDetailsQty(string requisitionStatus, long createBy, RequisitionDetail requisitionDetailModel, long fromStore, long toStore)
+        {
+            var stockInTransactionByItemId = await db.StockInTransactions.Where(f => f.ItemId == requisitionDetailModel.ItemId && f.StoreId == fromStore && f.Current_Quantity > 0).ToListAsync();
+
+            var remainingQty = requisitionDetailModel.RequestQty;
+            var totalQty = 0;
+            string message = "";
+            // Check quantity
+            foreach (var item in stockInTransactionByItemId)
+            {
+                totalQty = totalQty + item.Current_Quantity;
+            }
+
+            // var itemDetails = await db.Items.Where(f => f.IsActive && f.Id == requisitionDetailModel.ItemId).FirstOrDefaultAsync();
+            if (totalQty < remainingQty) return message = $"Quantity shortage for Item";
+            // if stock have quantity then entry in stock in transaction
+            else
+            {
+                while (remainingQty != 0)
+                {
+
+                    foreach (var item in stockInTransactionByItemId)
+                    {
+                        if (remainingQty == 0) break;
+                        remainingQty = await UpdateStockInTransaction(item, remainingQty, toStore, createBy);
+                    }
+                    //if (remainingQty == 0) break;
+                }
+
+                if (requisitionDetailModel.Id > 0)
+                {
+                    await RequisitionDetailsService.Update(requisitionDetailModel);
+
+                }
+                else
+                {
+                    var newRequisitionDetail = new RequisitionDetail
+                    {
+                        RequisitionId = requisitionDetailModel.RequisitionId,
+                        ItemId = requisitionDetailModel.ItemId,
+                        RequestQty = requisitionDetailModel.RequestQty,
+                        ApprovedQty = requisitionDetailModel.RequestQty,
+                        IssuedQty = requisitionDetailModel.RequestQty,
+                        ApprovedStatus = requisitionStatus,
+                        IsActive = true,
+                        CreateBy = createBy,
+                        CreateDate = System.DateTime.Now
+                    };
+
+                    await RequisitionDetailsService.Add(newRequisitionDetail);
+                }
+                return message;
+            }
+        }
+
+        #endregion
+
+        #region StartProduction
+        public async Task<BaseResponse> StartProduction(Requisition requisition)
+        {
+            var response = new BaseResponse { IsSuccess = true };
+
+            using (var ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+            {
+                try
+                {
+                    long productionId = await AddProduction(requisition);
+
+                    if (productionId <= 0)
+                    {
+                        response.IsSuccess = false;
+                        response.Message = "Warning! There was an error while Production";
+                    }
+                    else
+                    {
+                        var requisitionStatus = requisition.RequisitionStatus;
+                        var createBy = requisition.CreateBy;
+
+                        for (int i = 0; i < requisition.ItemQuantity; i++)
+                        {
+                            await AddNewItem(requisition, productionId, i + 1);
+                        }
+                        response.Message = "Success! Item Uploaded";
+                    }
+                }
+                catch (Exception ex)
+                {
+                    response.IsSuccess = false;
+                    response.Message = "Error! Error On adding item details";
+                }
+
+                if (response.IsSuccess)
+                {
+                    ts.Complete();
+                    response.Message = "Requision Successfully Added";
+                }
+
+                ts.Dispose();
+
+
+            }
+            return response;
+        }
+        private async Task<long> AddProduction(Requisition requisition)
+        {
+            long newProductionId = 0;
+            try
+            {
+                var production = new Production
+                {
+                    RequisitionId = requisition.Id,
+                    StartTime = System.DateTime.Now,
+                    ProductionStatus = "Pending",
+                    PresentLineId = 0,
+                    PresentLineStatus = "Pending",
+                    CreateBy = requisition.CreateBy,
+                    CreateDate = System.DateTime.Now,
+                    IsActive = true
+                };
+                db.Productions.Add(production);
+                await db.SaveChangesAsync();
+
+                newProductionId = production.Id;
+                return newProductionId;
+
+                return newProductionId;
+
+            }
+            catch (Exception ex)
+            {
+                return newProductionId;
+
+            }
+        }
+
+        private async Task AddNewItem(Requisition requisition, long productionId, int slNo)
+        {
+            Random RNG = new Random();
+            int length = 5;
+            var rString = "";
+            for (var i = 0; i < length; i++)
+            {
+                rString += ((char)(RNG.Next(1, 26) + 64)).ToString().ToLower();
+            }
+
+            rString = Convert.ToString(requisition.Id) + Convert.ToString(slNo) + rString;
+
+            var newItem = new NewItem
+            {
+                ModelId = requisition.ModelId,
+                ProductionId = productionId,
+                Barcode = rString,
+                Status = "Raw",
+                Code = rString,
+                ProductStationId = 0,
+                CreateBy = requisition.CreateBy,
+                CreateDate = requisition.CreateDate,
+                IsActive = true
+            };
+
+            db.NewItems.Add(newItem);
+            await db.SaveChangesAsync();
+        }
+
+        #endregion
+
+        #region ProductionEnd
+
+        public async Task<BaseResponse> ConsumeRequisitionItemDetails(long productionId, long currentUser)
+        {
+            var response = new BaseResponse { IsSuccess = true };
+
+            using (var ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+            {
+                try
+                {
+                    var production = await db.Productions.FirstOrDefaultAsync(f => f.IsActive && f.Id == productionId);
+                    var requisition = await db.Requisitions.FirstOrDefaultAsync(f => f.IsActive && f.Id == production.RequisitionId);
+                    var requisitionDetails = await db.RequisitionDetails.Where(f => f.IsActive && f.RequisitionId == production.RequisitionId).ToListAsync();
+                    var newItems = await db.NewItems.Where(f => f.IsActive && f.ProductionId == productionId).ToListAsync();
+
+                    if (requisitionDetails != null)
+                    {
+                        var toStore = requisition.ToStoreId;
+
+                        foreach (var item in requisitionDetails)
+                        {
+                            string sqlCommand = $@"[pro].[ProductionRepairingItem_ProductionRepairingItemByItemId]{productionId},{item.ItemId}";
+                            var filteredList = await db.ItemQuantitys
+                                                    .FromSqlRaw(sqlCommand)
+                                                    .ToListAsync();
+                            if (filteredList.Any())
+                            {
+                                //var stockInTransaction = new StockInTransaction();
+
+                                //item.ApprovedQty = item.ApprovedQty - filteredList.FirstOrDefault().Quantity;
+                                //stockInTransaction.ItemId = filteredList.FirstOrDefault().ItemId;
+                                //stockInTransaction.StockInId = 61;
+                                //var tofaultyStore = StoreConstants.Faulty;
+                                //await AddNewStockInTransaction(stockInTransaction, tofaultyStore, currentUser, filteredList.FirstOrDefault().Quantity);
+                                var faultyQuantity = filteredList.FirstOrDefault().Quantity;
+                                var faultyItemId = filteredList.FirstOrDefault().ItemId;
+
+                                response = await ConsumeRequisitionDetailsQtyWithFaulty(currentUser, item, toStore, faultyQuantity, faultyItemId);
+                                if (response.IsSuccess)
+                                {
+                                    var repairStore = StoreConstants.Repair;
+                                    response = await ConsumeRepairDetailsQty(currentUser, item, repairStore, faultyQuantity, faultyItemId);
+                                }
+                                if (response.IsSuccess)
+                                {
+                                    var StockOutTransaction = new StockOutTransaction();
+                                    StockOutTransaction.ItemId = item.ItemId;
+                                    StockOutTransaction.Quantity = item.ApprovedQty;
+                                    StockOutTransaction.IsActive = true;
+                                    StockOutTransaction.CreateBy = currentUser;
+                                    StockOutTransaction.CreateDate = DateTime.Now;
+
+                                    db.StockOutTransactions.Add(StockOutTransaction);
+                                    response.IsSuccess = true;
+                                }
+                            }
+                            else
+                            {
+                                response = await ConsumeRequisitionDetailsQty(currentUser, item, toStore);
+                                if (response.IsSuccess)
+                                {
+                                    var StockOutTransaction = new StockOutTransaction();
+                                    StockOutTransaction.ItemId = item.ItemId;
+                                    StockOutTransaction.Quantity = item.ApprovedQty;
+                                    StockOutTransaction.IsActive = true;
+                                    StockOutTransaction.CreateBy = currentUser;
+                                    StockOutTransaction.CreateDate = DateTime.Now;
+
+                                    await StockOutTransactionService.Add(StockOutTransaction);
+                                    response.IsSuccess = true;
+                                }
+
+                            }
+                        }
+
+                    }
+                    if (response.IsSuccess) await db.SaveChangesAsync();
+                    if (response.IsSuccess)
+                    {
+                        var newStockInId = await this.AddNewStockIn(currentUser);
+                        if (newStockInId <= 0)
+                        {
+                            response.IsSuccess = false;
+                        }
+
+                        if (response.IsSuccess)
+                        {
+                            foreach (var item in newItems)
+                            {
+                                var newItem = new Item();
+                                newItem.Title = item.Code;
+                                newItem.Code = item.Barcode;
+                                newItem.CreateBy = currentUser;
+                                var itemId = await ManageItem(newItem);
+                                //var stockInTransaction = new StockInTransaction();
+
+                                //stockInTransaction.StockInId = newStockInId;
+                                //stockInTransaction.ItemId = itemId;
+                                //stockInTransaction.Stock_Quantity = 1;
+                                //stockInTransaction.Current_Quantity = 1;
+                                //stockInTransaction.StoreId = StoreConstants.Finished_Goods;
+                                //stockInTransaction.CreateBy = currentUser;
+                                //stockInTransaction.CreateDate = DateTime.Now;
+                                //stockInTransaction.Date= DateTime.Now;
+
+                                //db.StockInTransactions.Add(stockInTransaction);
+                                await AddFinishGoodsNewStockInTransaction(newStockInId, itemId, currentUser);
+                            }
+                            await UpdateProductionStatus(ProductionStatus.ProductionEnd, productionId);
+                            await db.SaveChangesAsync();
+                        }
+                    }
+
+                }
+                catch (Exception ex)
+                {
+                    response.IsSuccess = false;
+                    response.Message = "Error! Error On adding item details";
+                }
+
+                if (response.IsSuccess)
+                {
+                    //await db.SaveChangesAsync();
+                    ts.Complete();
+                    response.Message = "Logistic Approve Done Successfully";
+                }
+
+                ts.Dispose();
+            }
+
+            if (!response.IsSuccess) response.Message = "Error! Error On adding item details";
+            return response;
+
+        }
+        private async Task<BaseResponse> ConsumeRequisitionDetailsQty(long currentUser, RequisitionDetail requisitionDetailModel, long toStore)
+        {
+            var response = new BaseResponse { IsSuccess = false };
+            try
+            {
+                var stockInTransactionByItemId = await db.StockInTransactions.Where(f => f.ItemId == requisitionDetailModel.ItemId && f.StoreId == toStore && f.Current_Quantity > 0).ToListAsync();
+                if (stockInTransactionByItemId.Any())
+                {
+                    var remainingQty = requisitionDetailModel.ApprovedQty;
+                    var totalQty = 0;
+                    string message = "";
+
+                    while (remainingQty != 0)
+                    {
+                        foreach (var item in stockInTransactionByItemId)
+                        {
+                            if (remainingQty == 0) break;
+                            remainingQty = await UpdateStockInTransactionProductionEnd(item, remainingQty, toStore, currentUser);
+                        }
+                    }
+                    response.IsSuccess = true;
+                }
+                return response;
+            }
+            catch (Exception ex)
+            {
+                response.IsSuccess = true;
+                return response;
+            }
+        }
+        private async Task<BaseResponse> ConsumeRequisitionDetailsQtyWithFaulty(long currentUser, RequisitionDetail requisitionDetailModel, long toStore, int faultyQuantity, long faultyItemId)
+        {
+            var response = new BaseResponse { IsSuccess = false };
+            try
+            {
+                var stockInTransactionByItemId = await db.StockInTransactions.Where(f => f.ItemId == requisitionDetailModel.ItemId && f.StoreId == toStore && f.Current_Quantity > 0).ToListAsync();
+                if (stockInTransactionByItemId.Any())
+                {
+                    var remainingQty = requisitionDetailModel.ApprovedQty - faultyQuantity;
+                    var totalQty = 0;
+                    string message = "";
+
+                    while (remainingQty != 0)
+                    {
+                        var stockInTransaction = new StockInTransaction();
+                        foreach (var item in stockInTransactionByItemId)
+                        {
+                            //if (faultyQuantity > 0 && faultyQuantity <= item.Current_Quantity)
+                            //{                         
+                            stockInTransaction.StockInId = item.StockInId;
+                            // await AddNewStockInTransaction(stockInTransaction, tofaultyStore, currentUser, faultyQuantity);
+                            if (remainingQty == 0) break;
+                  
+                            remainingQty = await UpdateStockInTransactionProductionEnd(item, remainingQty, toStore, currentUser);
+                            //}
+                            ////else
+                            ////{
+                            ////    if (remainingQty == 0) break;
+                            ////    remainingQty = await UpdateStockInTransactionProductionEnd(item, remainingQty, toStore, currentUser);
+                            ////}
+                        }
+                        stockInTransaction.ItemId = faultyItemId;
+                        var tofaultyStore = StoreConstants.Faulty;
+                        await AddNewStockInTransaction(stockInTransaction, tofaultyStore, currentUser, faultyQuantity);
+                    }
+                    response.IsSuccess = true;
+                }
+                return response;
+            }
+            catch (Exception ex)
+            {
+                response.IsSuccess = true;
+                return response;
+            }
+        }
+
+        private async Task<int> UpdateStockInTransactionProductionEnd(StockInTransaction stockInTransaction, int remainingQty, long toStore, long currentUser)
+        {
+            var outQuantity = 0;
+
+            if (stockInTransaction.Current_Quantity > remainingQty)
+            {
+                outQuantity = remainingQty;
+                remainingQty = 0;
+            }
+            else
+            {
+                outQuantity = (int)stockInTransaction.Current_Quantity;
+                remainingQty = remainingQty - outQuantity;
+            }
+
+            stockInTransaction.Out_Quantity = stockInTransaction.Out_Quantity + outQuantity;
+            stockInTransaction.Current_Quantity = stockInTransaction.Stock_Quantity - stockInTransaction.Out_Quantity;
+            stockInTransaction.UpdateBy = currentUser;
+            await StockInTransactionService.Update(stockInTransaction);
+
+            return remainingQty;
+
+
+
+        }
+        private async Task<BaseResponse> ConsumeRepairDetailsQty(long currentUser, RequisitionDetail requisitionDetailModel, long toStore, int repairQuantity, long repairItemId)
+        {
+            var response = new BaseResponse();
+            try
+            {
+                var stockInTransactionByItemId = await db.StockInTransactions.Where(f => f.ItemId == requisitionDetailModel.ItemId && f.StoreId == toStore && f.Current_Quantity > 0).ToListAsync();
+                if (stockInTransactionByItemId.Any())
+                {
+                    var remainingQty = repairQuantity;
+                    var totalQty = 0;
+                    string message = "";
+
+                    while (remainingQty != 0)
+                    {
+                        foreach (var item in stockInTransactionByItemId)
+                        {
+                            //if (repairQuantity > 0 && repairQuantity <= item.Current_Quantity)
+                            //{
+                            //    var stockInTransaction = new StockInTransaction();
+                            //    stockInTransaction.ItemId = repairItemId;
+                            //    stockInTransaction.StockInId = item.StockInId;
+                            //    var tofaultyStore = StoreConstants.Faulty;
+                            //await AddNewStockInTransaction(stockInTransaction, tofaultyStore, currentUser, repairQuantity);
+                            if (remainingQty == 0) break;
+
+                            remainingQty = await UpdateStockInTransactionRepair(item, remainingQty, toStore, currentUser);
+                            //}
+                            ////else
+                            ////{
+                            ////    if (remainingQty == 0) break;
+                            ////    remainingQty = await UpdateStockInTransactionRepair(item, remainingQty, toStore, currentUser);
+                            ////}
+                        }
+                    }
+                    response.IsSuccess = true;
+                }
+                return response;
+            }
+            catch (Exception ex)
+            {
+                response.IsSuccess = true;
+                return response;
+            }
+        }
+
+        private async Task<int> UpdateStockInTransactionRepair(StockInTransaction stockInTransaction, int remainingQty, long toStore, long currentUser)
+        {
+            var outQuantity = 0;
+
+            if (stockInTransaction.Current_Quantity > remainingQty)
+            {
+                outQuantity = remainingQty;
+                remainingQty = 0;
+            }
+            else
+            {
+                outQuantity = (int)stockInTransaction.Current_Quantity;
+                remainingQty = remainingQty - outQuantity;
+            }
+
+            stockInTransaction.Out_Quantity = stockInTransaction.Out_Quantity + outQuantity;
+            stockInTransaction.Current_Quantity = stockInTransaction.Stock_Quantity - stockInTransaction.Out_Quantity;
+            stockInTransaction.UpdateBy = currentUser;
+            await StockInTransactionService.Update(stockInTransaction);
+
+            return remainingQty;
+
+
+
+        }
+
+        private async Task<long> AddNewStockIn(long currentUser)
+        {
+            long newStockInId = 0;
+
+            var newStockIn = new StockIn
+            {
+                ReferenceNumber = "Finished Model",
+                Date = DateTime.Now,
+                CreateBy = currentUser,
+                CreateDate = DateTime.Now,
+                IsActive = true
+            };
+            db.StockIns.Add(newStockIn);
+            await db.SaveChangesAsync();
+
+            newStockInId = newStockIn.Id;
+            return newStockInId;
+        }
+        private async Task<long> ManageItem(Item newItem)
+        {
+            long itemId = 0;
+            var existingItem = await db.Items.FirstOrDefaultAsync(f => f.Title == newItem.Title);
+            if (existingItem != null)
+            {
+                itemId = existingItem.Id;
+                return itemId;
+            }
+
+            newItem.CreateDate = DateTime.Now;
+
+            db.Items.Add(newItem);
+            await db.SaveChangesAsync();
+            itemId = newItem.Id;
+
+            return itemId;
+        }
+        private async Task AddFinishGoodsNewStockInTransaction(long newStockInId, long itemId, long currentUser)
+        {
+
+            //let add new stock in transaction
+            var newStockInTransaction = new StockInTransaction
+            {
+                StockInId = newStockInId,
+                ItemId = itemId,
+                StoreId = StoreConstants.Finished_Goods,
+                Stock_Quantity = 1,
+                Current_Quantity = 1,
+                Out_Quantity = 0,
+                Date = DateTime.Now,
+                CreateBy = currentUser,
+                CreateDate = DateTime.Now,
+                IsActive = true
+            };
+
+            db.StockInTransactions.Add(newStockInTransaction);
+            //await db.SaveChangesAsync();
+        }
+        public async Task<BaseResponse> UpdateProductionStatus(string status, long productionId)
+        {
+            var response = new BaseResponse { };
+            try
+            {
+                var production = await db.Productions.FirstOrDefaultAsync(f => f.IsActive && f.Id == productionId);
+                production.ProductionStatus = status;
+
+                //await db.SaveChangesAsync();
+                response.IsSuccess = true;
+                response.Message = "Success! ProductionLine Updated";
+                return response;
+            }
+            catch (Exception ex)
+            {
+                response.IsSuccess = false;
+                response.Message = "Success! ProductionLine Updated";
+                return response;
+            }
+        }
+        #endregion
+
+        #region Private Methods
+
+        private async Task<Requisition> GetById(long id)
+        {
+            var Requisition = await db.Requisitions.Include(f => f.Model).
+                FirstOrDefaultAsync(f => f.IsActive && f.Id == id);
+
+            return Requisition;
+        }
+        private async Task<int> UpdateStockInTransaction(StockInTransaction stockInTransaction, int remainingQty, long toStore, long createBy)
+        {
+            var outQuantity = 0;
+
+            if (stockInTransaction.Current_Quantity > remainingQty)
+            {
+                outQuantity = remainingQty;
+                remainingQty = 0;
+            }
+            else
+            {
+                outQuantity = (int)stockInTransaction.Current_Quantity;
+                remainingQty = remainingQty - outQuantity;
+            }
+
+            stockInTransaction.Out_Quantity = stockInTransaction.Out_Quantity + outQuantity;
+            stockInTransaction.Current_Quantity = stockInTransaction.Stock_Quantity - stockInTransaction.Out_Quantity;
+
+            await StockInTransactionService.Update(stockInTransaction);
+            await AddNewStockInTransaction(stockInTransaction, toStore, createBy, outQuantity);
+            return remainingQty;
+
+
+
+        }
+
+        private async Task AddNewStockInTransaction(StockInTransaction stockInTransaction, long toStore, long createBy, int outQuantity)
+        {
+            //let add new stock in transaction
+            var newStockInTransaction = new StockInTransaction
+            {
+                StockInId = stockInTransaction.StockInId,
+                ItemId = stockInTransaction.ItemId,
+                StoreId = toStore,
+                Stock_Quantity = outQuantity,
+                Current_Quantity = outQuantity,
+                Out_Quantity = 0,
+                CreateBy = createBy,
+                CreateDate = System.DateTime.Now,
+                Date = System.DateTime.Now,
+                IsActive = true
+            };
+
+            db.StockInTransactions.Add(newStockInTransaction);
+            //await db.SaveChangesAsync();
+        }
+
+        #endregion
+
+    }
+}
