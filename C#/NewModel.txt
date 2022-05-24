@@ -1,0 +1,10 @@
+  var newStockIn = new StockIn
+            {
+                Lot = singleItem.Lot,
+                ReferenceNumber = singleItem.ReferenceNumber,
+                Date = currentDate,
+                CreateBy = singleItem.CreateBy,
+                CreateDate = currentDate,
+                IsActive = true
+            };
+            db.StockIns.Add(newStockIn);

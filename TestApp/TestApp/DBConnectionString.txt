@@ -1,0 +1,1 @@
+data source=192.192.192.118\MSSQLSERVER2016;initial catalog=gHRMPlus_V3_Live_GC_Latest;user id=sa;password=Software#2019;MultipleActiveResultSets=True;App=EntityFramework

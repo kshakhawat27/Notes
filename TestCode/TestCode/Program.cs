@@ -64,7 +64,7 @@ namespace TestCode
             while (remainqty != 0)
             {
                 remainqty = ReturnQty(remainqty);
-                if (remainqty == 0) break;
+               if (remainqty == 0) break;
                 Console.WriteLine(remainqty);
             }
         }
@@ -113,8 +113,14 @@ namespace TestCode
                 new TestModel{ id=15}
             };
 
+            DateTime localDate = DateTime.Now;
            
-           var t= ToDataTable(test1);
+            var t= ToDataTable(test1);
+
+            int Timestamp = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
+       
+            Console.WriteLine(localDate.ToString());
+            Console.WriteLine(Timestamp);
         }
 
         public static DataTable ToDataTable<T>(this IList<T> list)
