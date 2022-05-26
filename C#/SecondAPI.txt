@@ -1,0 +1,55 @@
+   [HttpGet]
+        [Route("test/{id}")]
+        public async Task<IActionResult> Test(int id)
+        {
+            string sql = "select * from teachers order by id desc";
+            //var connectionString = "Data Source=192.192.192.118\\MSSQLSERVER2016;initial catalog=GPMS;user id=sa;password=Software#2019";
+            var connectionString = "Data Source=DESKTOP-AFDJQ1M\\SQLEXPRESS;initial catalog=GPMS;user id=;password=;Trusted_Connection=True";
+            //using (var connection = new SqlConnection("Data Source=192.192.192.118\\MSSQLSERVER2016;initial catalog=GPMS;user id=sa;password=Software#2019"))
+            //{
+            //    connection.Open();
+            //    var data = connection.Query(sql).ToList();
+
+            //    // use data
+            //}
+            List<String> test =new List <String>();
+            SqlConnection conn = new SqlConnection();
+            conn.ConnectionString = connectionString;
+            try
+            {
+                SqlCommand cmd = new SqlCommand();
+                cmd.Connection = conn;
+                cmd.CommandText = "select name as EMPNO,type as ENAME from con.Line";
+                cmd.CommandType = CommandType.Text;
+                conn.Open();
+                SqlDataReader reader = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+                if (reader.HasRows)
+                {
+                    while (reader.Read())
+                    {
+                        test.Add(reader["EMPNO"].ToString());
+                        //Console.WriteLine("Employee No: " + reader["EMPNO"].ToString() + " Name :" + reader["ENAME"].ToString());
+                    }
+                }
+                cmd.Dispose();
+                conn.Dispose();
+
+            }
+            catch (Exception ex)
+            { }
+            return Ok(new { IsSuccess = true, Data = test });
+        }
+
+
+https://www.c-sharpcorner.com/UploadFile/201fc1/sql-server-database-connection-in-csharp-using-adonet/
+
+ public IConfiguration Configuration { get; }
+        #endregion
+
+        #region ctor
+
+        public NewItemService(GPMSContext db, IConfiguration configuration)
+        {
+            this.db = db;
+            Configuration = configuration;
+        }
