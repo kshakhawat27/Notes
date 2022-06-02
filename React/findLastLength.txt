@@ -1,0 +1,1 @@
+https://stackoverflow.com/questions/5873810/how-can-i-get-last-characters-of-a-string

@@ -1,0 +1,23 @@
+var invoiceSum =
+DSZoho.Tables["Invoices"].AsEnumerable()
+.Select (x => 
+    new {  
+        InvNumber = x["invoice number"],
+        InvTotal = x["item price"],
+        Contact = x["customer name"],
+        InvDate = x["invoice date"],
+        DueDate = x["due date"],
+        Balance = x["balance"],
+        }
+ )
+ .GroupBy (s => new {s.InvNumber, s.Contact, s.InvDate, s.DueDate} )
+ .Select (g => 
+        new {
+            InvNumber = g.Key.InvNumber,
+            InvDate = g.Key.InvDate,
+            DueDate = g.Key.DueDate,
+            Contact = g.Key.Contact,
+            InvTotal = g.Sum (x => Math.Round(Convert.ToDecimal(x.InvTotal), 2)),
+            Balance = g.Sum (x => Math.Round(Convert.ToDecimal(x.Balance), 2)),
+            } 
+ );

@@ -1,0 +1,1 @@
+select  ROW_NUMBER()over(order by M_IMEI1) as r, M_BoxID, M_IMEI1 from Project_C21 WHERE M_WOID='C21_02'

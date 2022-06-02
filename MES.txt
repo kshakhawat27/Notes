@@ -1,0 +1,24 @@
+SELECT count(M_WOID) from Project_C21
+
+SELECT count(M_WOID) from Project_C21
+
+SELECT M_BoxID from Project_C22
+SELECT  M_BoxID, M_IMEI1, M_WOID from Project_C21 
+where M_BoxID='C2120JL000401' group by M_BoxID, M_WOID
+
+SELECT  M_BoxID, Count(M_IMEI1), M_WOID from Project_C21 
+group by M_BoxID, M_WOID
+
+SELECT  * from Project_C21
+where CAST (M_IMEI1  as bigint) > cast('35912710000000' as bigint) and CAST (M_IMEI1  as bigint) > cast('35912710019999' as bigint)
+group by M_BoxID, M_WOID
+where 
+   select cast('86360405053921' as bigint) 
+ - cast('86360405055720' as bigint) 
+
+select * from Project_C21
+SELECT * from AISProject
+
+select * from WorkOrders where WO_ID='C21_02'
+
+select * from ReworkCarton
