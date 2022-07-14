@@ -1,0 +1,8 @@
+ var filteredList = db.ModelItems.Where(f => f.IsActive).Select(
+                    x => new DropdownListModel
+                    {
+                        Value = Convert.ToInt32(x.Model.Id),
+                        Label = x.Model.Name+" "+ x.Model.Color.Name 
+                    }) .Distinct().ToList(); ;
+
+                return filteredList;

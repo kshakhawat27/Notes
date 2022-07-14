@@ -1,0 +1,318 @@
+using AutoMapper;
+using GPMS.Core.Filters;
+using GPMS.Data.DbModels;
+using GPMS.Service;
+using GPMS.Service.Categories;
+using GPMS.Service.NewItems;
+using GPMS.Service.Xolos;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Linq;
+using System.Threading.Tasks;
+
+
+namespace GPMS.Api.Controllers
+{
+    [Route("api/[controller]")]
+    public class NewItemController : CoreController
+    {
+        #region Private Methods
+
+        private readonly IMapper mapper;
+        private readonly GPMSContext db;
+        private readonly INewItemService newItemService;
+        private readonly IXoloService xoloService;
+        private readonly IConfiguration _configuration;
+
+        #endregion
+
+        #region ctor
+
+        public NewItemController(IMapper mapper,
+            IConfiguration configuration,
+            INewItemService newItemService,
+            IXoloService xoloService,
+            GPMSContext db
+            )
+        {
+            this.mapper = mapper;
+            this.newItemService = newItemService;
+            this.xoloService = xoloService;
+            _configuration = configuration;
+            this.db = db;
+        }
+
+        #endregion
+
+        #region List
+
+        //POST api/NewItem/getclassbyfilter 
+        [Route("getNewItembyfilter")]
+        [HttpPost]
+        public async Task<IActionResult> GetByFilter(BaseSearchFilter filter)
+        {
+            var filterredList = await newItemService.GetByFilter(filter);
+
+            return Ok(new
+            {
+                Data = filterredList,
+                SearchFilter = filter
+            });
+        }
+        [Route("getByFilterByProductionIdfilter")]
+        [HttpPost]
+        public async Task<IActionResult> GetByFilterByProductionId(BaseSearchFilter filter)
+        {
+            var filterredList = await newItemService.GetByFilterByProductionId(filter);
+
+            return Ok(new
+            {
+                Data = filterredList,
+                SearchFilter = filter
+            });
+        }
+        [Route("getByFilterByQRHistoryIdfilter")]
+        [HttpPost]
+        public async Task<IActionResult> GetByFilterByQRHistoryId(BaseSearchFilter filter)
+        {
+            var filterredList = await newItemService.GetByFilterByQRHistoryId(filter);
+
+            return Ok(new
+            {
+                Data = filterredList,
+                SearchFilter = filter
+            });
+        }
+
+        [Route("getByModelColorFilter")]
+        [HttpPost]
+        public async Task<IActionResult> GetByModelColorFilter(BaseSearchFilter filter)
+        {
+            var IsSuccess = true; var message = "";
+            var filterredList = await newItemService.GetByModelColorFilter(filter);
+            if (filterredList.Count != filter.HowManyQR)
+            {
+                IsSuccess = false;
+                message = "This much Quanity not requested in Requisition !! Check Line Model Color same as Requisition";
+            }
+            return Ok(new
+            {
+                Data = filterredList,
+                SearchFilter = filter,
+                IsSuccess,
+                message
+            });
+        }
+
+
+        #endregion
+
+
+        #region Get Details By Id
+
+        // GET api/NewItem/details/4
+        [HttpGet]
+        [Route("details/{id}")]
+        public async Task<IActionResult> GetDetails(int id)
+        {
+            var single = await newItemService.GetNewItemById(id);
+
+            if (single == null)
+            {
+                var message = "NewItem not found, Please try another.";
+                return Ok(new { IsSuccess = false, Message = message });
+            }
+
+            return Ok(new { IsSuccess = true, Data = single });
+        }
+
+
+        #endregion
+
+        #region Get Details By Code
+
+        // GET api/NewItem/details/4
+        [HttpGet]
+        [Route("getDetailsByCode/{code}")]
+        public async Task<IActionResult> GetDetailsByCode(string code)
+        {
+            var single = await newItemService.GetNewItemByCode(code);
+
+            if (single == null)
+            {
+                var message = "Item not found, Please try another.";
+                return Ok(new { IsSuccess = false, Message = message });
+            }
+
+            return Ok(new { IsSuccess = true, Data = single });
+        }
+
+        #endregion
+
+        #region Get Details By IMEI
+
+        // GET api/NewItem/details/4
+        [HttpGet]
+        [Route("getDetailsByIMEI/{code}")]
+        public async Task<IActionResult> GetDetailsByIMEI(string code)
+        {
+            var single = await newItemService.GetNewItemByIMEI(code);
+
+            if (single == null)
+            {
+                var message = "Item not found, Please try another.";
+                return Ok(new { IsSuccess = false, Message = message });
+            }
+
+            return Ok(new { IsSuccess = true, Data = single });
+        }
+
+        #endregion
+
+        #region Add
+
+        [Route("add")]
+        [HttpPost]
+        public async Task<ActionResult> Add([FromBody] NewItem model)
+        {
+            if (!ModelState.IsValid)
+                return Ok(new { IsSuccess = false, Message = "You must fill all the required fields" });
+
+            var newNewItem = mapper.Map<NewItem>(model);
+            newNewItem.CreateBy = CurrentLoginUser.Id;
+            newNewItem.CreateDate = System.DateTime.Now;
+
+            //let's add NewItem
+            var response = await newItemService.Add(newNewItem);
+
+            return Ok(new { response });
+        }
+
+        #endregion
+
+        #region Edit
+
+        [Route("edit")]
+        [HttpPost]
+        public async Task<ActionResult> Edit([FromBody] NewItem model)
+        {
+            if (!ModelState.IsValid)
+                return Ok(new { IsSuccess = false, Message = "You must fill all the required fields" });
+
+            var updateNewItem = mapper.Map<NewItem>(model);
+            updateNewItem.UpdateBy = CurrentLoginUser.Id;
+
+            //let's add NewItem
+            var response = await newItemService.Update(updateNewItem);
+
+            return Ok(new { response });
+        }
+
+        #endregion
+
+        #region Requisition Status
+
+        [Route("requisitionStatusByRequisitionId")]
+        [HttpPost]
+        public async Task<ActionResult> RequisitionStatusByRequisitionId([FromBody] BaseSearchFilter filter)
+        {
+            if (!ModelState.IsValid)
+                return Ok(new { IsSuccess = false, Message = "You must fill all the required fields" });
+
+            filter.CreateBy = CurrentLoginUser.Id;
+
+            //let's add NewItem
+            var response = await newItemService.RequisitionStatusByRequisitionId(filter);
+
+            return Ok(new { response });
+        }
+
+        #endregion
+
+        #region Delete
+
+        [Route("delete/{id}")]
+        [HttpDelete]
+        public async Task<ActionResult> Delete(int id)
+        {
+
+            var deleteNewItem = new NewItem { Id = id };
+            deleteNewItem.CreateBy = CurrentLoginUser.Id;
+
+            var response = await newItemService.Delete(deleteNewItem);
+
+            return Ok(new { response });
+        }
+
+        #endregion
+
+        #region IMEI
+        [HttpGet]
+        [Route("imeiGetByBoxId/{boxId}")]
+        public async Task<ActionResult> IMEIGetByBoxId(string boxId)
+        {
+            var serchfilter = new BaseSearchFilter { BoxId = boxId, CreateBy = CurrentLoginUser.Id };
+
+            var response = await xoloService.IMEIGetByBoxIdAndCreateCarton(serchfilter);
+            if (!response.IsSuccess && string.IsNullOrEmpty(response.Message))
+            { response.Message = "Invalid Carton Error in process !!"; };
+
+            return Ok(new { response });
+        }
+
+        [Route("checkIMEIUpdateImei")]
+        [HttpPost]
+        public async Task<IActionResult> CheckIMEIUpdateImei(BaseSearchFilter filter)
+        {
+            var response = await xoloService.CheckIMEIUpdateImei(filter);
+            if (!response.IsSuccess && string.IsNullOrEmpty(response.Message))
+            { response.Message = " Error In IMEI"; }
+
+            return Ok(new
+            {
+                Data = response,
+                SearchFilter = filter
+            });
+        }
+        [HttpGet]
+        [Route("checkImeiWeight/{imei}")]
+        public async Task<ActionResult> CheckImeiWeight(string imei)
+        {
+            // imei1 = "359127100000015";
+            var serchfilter = new BaseSearchFilter { IMEI1 = imei };
+            var response = await xoloService.CheckImeiWeight(serchfilter);
+            if (!response.IsSuccess) { response.Message = " Not passed yet in Weight Scale !!"; }
+            return Ok(new { data = response });
+        }
+        [HttpPost]
+        [Route("updateCartonByIMEI")]
+        public async Task<ActionResult> UpdateCartonByIMEI(BaseSearchFilter filter)
+        {
+            // imei1 = "359127100000015";
+            var response = await xoloService.UpdateCartonByIMEI(filter.IMEI1);
+
+            return Ok(new { data = response });
+        }
+
+        #endregion
+
+        #region ConsumeQuantity
+
+        [HttpGet]
+        [Route("consumeBoxItemDetails/{boxId}")]
+        public async Task<ActionResult> ConsumeBoxItemDetails(string boxId)
+        {
+            var serchfilter = new BaseSearchFilter { BoxId = boxId, CreateBy = CurrentLoginUser.Id };
+            var response = await xoloService.ConsumeBoxItemDetails(serchfilter.BoxId, serchfilter.CreateBy);
+        
+            return Ok(new { response });
+        }
+
+        #endregion
+    }
+}

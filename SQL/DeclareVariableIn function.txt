@@ -1,0 +1,9 @@
+ALTER function [dbo].[Func]()
+returns @T table(ColName int)
+as
+begin
+  declare @Var int
+  set @Var = 10
+  insert into @T(ColName) values (@Var)
+  return
+end

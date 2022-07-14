@@ -1,0 +1,3 @@
+  $("body").on("click", ".allChk", function (event) {
+            var _this = $(this),
+                _rId = $(this).attr('id').match(/\d+/),

@@ -1,0 +1,19 @@
+USE [GPMS]
+GO
+/****** Object:  UserDefinedFunction [dbo].[Func]    Script Date: 6/23/2022 3:05:06 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER function [dbo].[Func]()
+returns @T table(ColName int)
+as
+begin
+  declare @Var int
+  set @Var = 10
+  insert into @T(ColName) values (@Var)
+  return
+end
+
+
+/// need to create structured table for declare variable

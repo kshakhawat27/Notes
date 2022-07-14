@@ -1,0 +1,288 @@
+using AutoMapper;
+using GPMS.Core.Filters;
+using GPMS.Data.DbModels;
+using GPMS.Service.Items;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
+using System.Threading.Tasks;
+using NPOI.XSSF.UserModel;
+using NPOI.HSSF.UserModel;
+using Newtonsoft.Json;
+using NPOI.SS.UserModel;
+using OfficeOpenXml;
+using System.Linq;
+using System.IO;
+using GPMS.Core.Utilities;
+using System.Transactions;
+using System;
+using System.Collections.Generic;
+
+namespace GPMS.Api.Controllers
+{
+    [Route("api/[controller]")]
+    public class ItemController : CoreController
+    {
+        #region Private Methods
+
+        private readonly IMapper mapper;
+        private readonly IItemService itemService;
+        private readonly IConfiguration _configuration;
+
+        #endregion
+
+        #region ctor
+
+        public ItemController(IMapper mapper,
+            IConfiguration configuration,
+            IItemService itemService
+            )
+        {
+            this.mapper = mapper;
+            this.itemService = itemService;
+            _configuration = configuration;
+        }
+
+        #endregion
+
+        #region List
+
+        //POST api/item/getclassbyfilter 
+        [Route("getitembyfilter")]
+        [HttpPost]
+        public async Task<IActionResult> GetByFilter(BaseSearchFilter filter)
+        {
+            var filterredList = await itemService.GetByFilter(filter);
+
+            return Ok(new
+            {
+                Data = filterredList,
+                SearchFilter = filter
+            });
+        }
+
+        #endregion
+
+        #region Get Dropdownlist
+
+        // GET api/Line/getdropdownlist
+        [HttpGet]
+        [Route("getdropdownlist")]
+        public async Task<IActionResult> GetDropdownlist()
+        {
+            var filteredList = await itemService.GetListForDropdown();
+
+            return Ok(new { IsSuccess = true, Data = filteredList });
+        }
+
+        #endregion
+
+        #region Get Details By Id
+
+        // GET api/item/details/4
+        [HttpGet]
+        [Route("details/{id}")]
+        public async Task<IActionResult> GetDetails(int id)
+        {
+            var single = await itemService.GetItemById(id);
+
+            if (single == null)
+            {
+                var message = "Item not found, Please try another.";
+                return Ok(new { IsSuccess = false, Message = message });
+            }
+
+            return Ok(new { IsSuccess = true, Data = single });
+        }
+
+        #endregion
+
+        #region Add
+
+        [Route("add")]
+        [HttpPost]
+        public async Task<ActionResult> Add([FromBody] ItemModel model)
+        {
+            if (!ModelState.IsValid)
+                return Ok(new { IsSuccess = false, Message = "You must fill all the required fields" });
+
+            var newItem = mapper.Map<Item>(model);
+            newItem.CreateBy = CurrentLoginUser.Id;
+            newItem.CreateDate = System.DateTime.Now;
+
+            //let's add item
+            var response = await itemService.Add(newItem);
+
+            return Ok(new { response });
+        }
+
+        #endregion
+
+        #region Edit
+
+        [Route("edit")]
+        [HttpPost]
+        public async Task<ActionResult> Edit([FromBody] ItemModel model)
+        {
+            if (!ModelState.IsValid)
+                return Ok(new { IsSuccess = false, Message = "You must fill all the required fields" });
+
+            var updateItem = mapper.Map<Item>(model);
+            updateItem.UpdateBy = CurrentLoginUser.Id;
+
+            //let's add item
+            var response = await itemService.Update(updateItem);
+
+            return Ok(new { response });
+        }
+
+        #endregion
+
+        #region Delete
+
+        [Route("delete/{id}")]
+        [HttpDelete]
+        public async Task<ActionResult> Delete(int id)
+        {
+
+            var deleteItem = new Item { Id = id };
+            deleteItem.CreateBy = CurrentLoginUser.Id;
+
+            var response = await itemService.Delete(deleteItem);
+
+            return Ok(new { response });
+        }
+
+        #endregion
+
+        #region ImportExcel
+
+        [Route("ImportExcelFile")]
+        [HttpPost]
+        public async Task<ActionResult> ImportExcelFile()
+        {
+            List<string> errorMsgList = new List<string>();
+            if (Request.Form.Files == null || Request.Form.Files.Count <= 0)
+            {
+                errorMsgList.Add("No sheet found to Upload");
+                return Ok(new { IsSuccess = false, Message = "Don't have file to Upload", error = errorMsgList });//should be returned validation message            
+            }
+
+            var requestFile = Request.Form.Files[0];
+            string sFileExtension = Path.GetExtension(requestFile.FileName).ToLower();
+            ISheet sheet;
+            var itemList = new List<Item>();
+
+            try
+            {
+                using (var stream = new MemoryStream())
+                {
+                    requestFile.CopyTo(stream);
+                    stream.Position = 0;
+
+                    if (sFileExtension == ".xls")//This will read the Excel 97-2000 formats    
+                    {
+                        HSSFWorkbook hssfwb = new HSSFWorkbook(stream);
+                        sheet = hssfwb.GetSheetAt(0);
+                    }
+                    else //This will read 2007 Excel format    
+                    {
+                        XSSFWorkbook hssfwb = new XSSFWorkbook(stream);
+                        sheet = hssfwb.GetSheetAt(0);
+                    }
+
+                    IRow headerRow = sheet.GetRow(0);
+                    int cellCount = headerRow.LastCellNum;
+
+                    for (int i = (sheet.FirstRowNum + 1); i <= sheet.LastRowNum; i++) //Read Excel File 
+                    {
+                        IRow row = sheet.GetRow(i);
+                        for (int j = 0; j < cellCount; j++)
+                        {
+                            row.GetCell(j, MissingCellPolicy.CREATE_NULL_AS_BLANK);
+                        }
+
+                        if (row == null) continue;
+                        if (row.Cells.All(d => d.CellType == CellType.Blank)) continue;
+
+                        string titleVal = (row.Cells[3].ToString());
+                        string[] splitedVal = titleVal.Split(" ");
+                        string code = splitedVal[2];
+                        if (code == null) errorMsgList.Add(GetErrorWithRowNo(i, "No Code found"));
+
+                        var qtyInString = row.Cells[4].ToString();
+                        qtyInString = qtyInString.Replace(",", "");
+                        int quantity = Convert.ToInt32(qtyInString);
+                        if (quantity <= 0) errorMsgList.Add(GetErrorWithRowNo(i + 1, "No quantity found"));
+
+                        var brandName = (row.Cells[0].ToString().Trim());
+                        if (string.IsNullOrWhiteSpace(brandName)) errorMsgList.Add(GetErrorWithRowNo(i + 1, "No Brand found"));
+
+                        var modelName = (row.Cells[1].ToString().Trim());
+                        if (string.IsNullOrWhiteSpace(modelName)) errorMsgList.Add(GetErrorWithRowNo(i + 1, "No Model found"));
+
+                        var lot = (row.Cells[2].ToString().Trim());
+                        if (string.IsNullOrWhiteSpace(lot)) errorMsgList.Add(GetErrorWithRowNo(i + 1, "No lot found"));
+
+                        var title = (row.Cells[3].ToString().Trim());
+                        if (string.IsNullOrWhiteSpace(title)) errorMsgList.Add(GetErrorWithRowNo(i + 1, "No Title found"));
+                        // var sku = (row.Cells[5].ToString().Trim());
+                        // if (string.IsNullOrWhiteSpace(sku)) errorMsgList.Add(GetErrorWithRowNo(i + 1, "No SKU found"));
+
+                        var unitPriceInString = row.Cells[4].ToString();
+                        unitPriceInString = unitPriceInString.Replace(",", "");
+                        decimal unitPrice = Convert.ToDecimal(unitPriceInString);
+                        if (unitPrice <= 0) errorMsgList.Add(GetErrorWithRowNo(i + 1, "No Unit Price found"));
+
+                        var totalPriceInString = row.Cells[4].ToString();
+                        totalPriceInString = totalPriceInString.Replace(",", "");
+                        decimal totalPrice = Convert.ToDecimal(totalPriceInString);
+                        if (totalPrice <= 0) errorMsgList.Add(GetErrorWithRowNo(i + 1, "No Total Price found"));
+
+                        var newItem = new Item()
+                        {
+                            BrandName = brandName,
+                            ModelName = modelName,
+                            Lot = lot,
+                            CategoryId = 1,
+                            Title = title,
+                          //  SKU = sku,
+                            Code = code,
+                            ShortDesc = title,
+                            ReferenceNumber = requestFile.FileName.Trim(),
+                            IsActive = true,
+                            Quantity = quantity,
+                            UnitPrice= unitPrice,
+                            TotalPrice= totalPrice
+
+                        };
+                        newItem.CreateBy = CurrentLoginUser.Id;
+
+                        itemList.Add(newItem);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                return Ok(new { IsSuccess = false, message = "Warning! No items found to upload. Please try with valid file.", error = errorMsgList });
+            }
+
+            if (!itemList.Any())
+                return Ok(new { IsSuccess = false, message = "Warning! No items found to upload. Please try with valid file.", error = errorMsgList });
+            if (errorMsgList.Any())
+                return Ok(new { IsSuccess = false, message = "Error Found in sheet !!", error = errorMsgList });
+            //let's add items into [item]
+            var response = await itemService.AddBatch(itemList);
+
+            return Ok(new { IsSuccess = response.IsSuccess, message = response.Message, error = errorMsgList });
+
+        }
+        #endregion
+
+        # region Public method
+        private string GetErrorWithRowNo(int CurrentRowNo, string Message)
+        {
+            return Message + " at row no " + CurrentRowNo;
+        }
+        #endregion
+    }
+}

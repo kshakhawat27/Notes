@@ -1,0 +1,4 @@
+select COUNT(n.id), IsNULL(s.Name,'') from pro.NewItem n
+left join con.Station s on n.ProductStationId=s.id
+where s.Name !=''
+group by n.ProductStationId,s.Name
