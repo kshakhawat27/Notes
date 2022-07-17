@@ -1,0 +1,20 @@
+initFundCalculation: function () {
+            $("#grid .fundCalculation").on('blur', function () {               
+                let totalFundAmount = 0;
+                let $parentTr = $(this).closest('tr');
+
+                $parentTr.find(".fundCalculation").each(function () {
+                    try {
+                        let fundAmount = $(this).val();                       
+                        if (fundAmount && fundAmount.trim().length > 0 && parseInt(fundAmount) > 0) {
+                            totalFundAmount = totalFundAmount+ parseInt(fundAmount);
+                        }
+                    }
+                    catch (err) {
+                        totalFundAmount = 0;
+                    }
+                });
+
+                $parentTr.find('.totalPayableAmount').text(totalFundAmount);
+            })
+        }
