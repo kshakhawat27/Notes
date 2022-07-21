@@ -1,0 +1,3 @@
+document.querySelector(".example").style.backgroundColor = "red";
+var v= document.querySelector(".example").innerHTML;
+console.log(v)

@@ -1,0 +1,9 @@
+  $("#grid .fundCalculation").each(function (index, item) {
+                console.log(item);
+                var value1 = $(this).closest('tr').children('td:eq(1)').find("#loanInstallmentAmount").val();
+                console.log(value1);
+                var value1 = $(this).closest('tr').children('td:eq(1)').find("#loanInstallmentAmount").val();
+                console.log(value2);
+              //  $(this).closest('tr').children('td:eq(3)').text(value1 + value2);
+                console.log(value2);
+            });

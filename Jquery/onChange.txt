@@ -1,0 +1,7 @@
+   $("table").on("change", "input", function() {
+      var row = $(this).closest("tr");
+      var qty = parseFloat(row.find(".qty").val());
+      var price = parseFloat(row.find(".price").val());
+      var total = qty * price;
+      row.find(".total").val(isNaN(total) ? "" : total);
+    });

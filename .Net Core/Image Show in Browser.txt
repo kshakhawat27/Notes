@@ -1,0 +1,1 @@
+https://stackoverflow.com/questions/55487702/access-image-from-web-api-core-folder-from-browser

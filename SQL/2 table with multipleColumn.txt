@@ -1,0 +1,4 @@
+INSERT INTO `table3` ( . . . )
+    SELECT . . .
+    FROM table1
+    WHERE (part, quantity) NOT IN (SELECT part, quantity FROM table2);

@@ -1,0 +1,16 @@
+ $("#myTable tr").each(function(index,item) {
+         console.log(item);
+         var value1=$(this).closest('tr').children('td:eq(0)').text();
+         console.log(value1);
+          var value2=$(this).closest('tr').children('td:eq(1)').text();
+         console.log(value2);
+    });
+});
+
+
+///Change td value of table
+   $('#detailInfo').html('changed value');
+
+//set value of td 
+  $(this).closest('tr').children('td:eq(1)').text('4');
+         console.log(value2);

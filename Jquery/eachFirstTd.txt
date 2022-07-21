@@ -1,0 +1,3 @@
+$("#myTable tr").each(function(){
+    $(this).find('td:eq(0)').addClass("black");
+});
