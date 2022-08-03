@@ -1,0 +1,309 @@
+USE [gBankerMamataPKSF]
+GO
+/****** Object:  StoredProcedure [pksf].[InsertLoanCodeXProductMappingData_IND_CODE_001]    Script Date: 7/31/2022 2:39:42 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+-- =============================================
+-- Author:		Sabet, Rejwanul
+-- Create date: <24 Mar 2021>
+-- Description:	<Description,,>
+-- [pksf].[InsertLoanCodeXProductMappingData_IND_CODE_001] '02/2022', '255','1'
+-- SELECT * FROM  PRA_MN_RPT_TAB_XL_PD where ind_code = '001' and mnyr='05/2022'
+-- =============================================
+ ALTER PROCEDURE [pksf].[InsertLoanCodeXProductMappingData_IND_CODE_001]
+	@FilteredDate nvarchar(100)='02/2021',
+	@OrganizationCode nvarchar(100)='096',
+	@Ins_User nvarchar(100)='Reja'
+AS
+BEGIN	
+	SET NOCOUNT ON;
+	 
+	DELETE FROM PRA_MN_RPT_TAB_XL_PD where ind_code = '001' and mnyr=@FilteredDate AND po_code = @OrganizationCode and m_f_flag='N'
+	
+	DECLARE @LastDateOfTheMonth Date,@StartDateOfTheMonth Date, @MM nvarchar(5), @Year nvarchar(5),@MonthName nvarchar(5),@InitMapCouns INT =0, @TotalMapCounts INT =0,@COLUMN NVARCHAR(10) ='',@LoanValueInText NVARCHAR(30) ='';
+	
+	SET @MM= LEFT(@FilteredDate,2);
+	SET @Year= RIGHT(@FilteredDate,4);
+	SET @LastDateOfTheMonth= (SELECT [pksf].[fun_GetLastDteOfTheMonth]  (@MM,@Year))
+	SET @MonthName= (SELECT [pksf].[fn_GetMonthNameByNumber] (@MM))
+	SET @StartDateOfTheMonth ='01-'+@MonthName+'-'+@Year;	
+	   
+	DECLARE 		
+		@LoanCode NVARCHAR(50),
+		@Gender NVARCHAR(20),
+		@LoanCodeValue DECIMAL(17,2);	
+
+	DROP TABLE IF EXISTS #PRA_MN_RPT_TAB_XL_PD
+	
+	CREATE TABLE #PRA_MN_RPT_TAB_XL_PD (
+		[po_code] [nvarchar](4) NOT NULL,
+		[mnyr] [nvarchar](7) NOT NULL,
+		[ind_code] [nvarchar](4) NOT NULL,
+		[m_f_flag] [nvarchar](4) NOT NULL,
+		[loan_00] [decimal](17, 2) NULL,
+		[loan_01] [decimal](17, 2) NULL,
+		[loan_02] [decimal](17, 2) NULL,
+		[loan_03] [decimal](17, 2) NULL,
+		[loan_04] [decimal](17, 2) NULL,
+		[loan_05] [decimal](17, 2) NULL,
+		[loan_06] [decimal](17, 2) NULL,
+		[loan_07] [decimal](17, 2) NULL,
+		[loan_08] [decimal](17, 2) NULL,
+		[loan_09] [decimal](17, 2) NULL,
+		[loan_10] [decimal](17, 2) NULL,
+		[loan_11] [decimal](17, 2) NULL,
+		[loan_12] [decimal](17, 2) NULL,
+		[loan_13] [decimal](17, 2) NULL,
+		[loan_14] [decimal](17, 2) NULL,
+		[loan_15] [decimal](17, 2) NULL,
+		[loan_16] [decimal](17, 2) NULL,
+		[loan_17] [decimal](17, 2) NULL,
+		[loan_18] [decimal](17, 2) NULL,
+		[loan_19] [decimal](17, 2) NULL,
+		[loan_20] [decimal](17, 2) NULL,
+		[loan_21] [decimal](17, 2) NULL,
+		[loan_22] [decimal](17, 2) NULL,
+		[loan_23] [decimal](17, 2) NULL,
+		[loan_24] [decimal](17, 2) NULL,
+		[loan_25] [decimal](17, 2) NULL,
+		[loan_26] [decimal](17, 2) NULL,
+		[loan_27] [decimal](17, 2) NULL,
+		[loan_28] [decimal](17, 2) NULL,
+		[loan_29] [decimal](17, 2) NULL,
+		[loan_30] [decimal](17, 2) NULL,
+		[loan_31] [decimal](17, 2) NULL,
+		[loan_32] [decimal](17, 2) NULL,
+		[loan_33] [decimal](17, 2) NULL,
+		[loan_34] [decimal](17, 2) NULL,
+		[loan_35] [decimal](17, 2) NULL,
+		[loan_36] [decimal](17, 2) NULL,
+		[loan_37] [decimal](17, 2) NULL,
+		[loan_38] [decimal](17, 2) NULL,
+		[loan_39] [decimal](17, 2) NULL,
+		[loan_40] [decimal](17, 2) NULL,
+		[loan_41] [decimal](17, 2) NULL,
+		[loan_42] [decimal](17, 2) NULL,
+		[loan_43] [decimal](17, 2) NULL,
+		[loan_44] [decimal](17, 2) NULL,
+		[loan_45] [decimal](17, 2) NULL,
+		[loan_46] [decimal](17, 2) NULL,
+		[loan_47] [decimal](17, 2) NULL,
+		[loan_48] [decimal](17, 2) NULL,
+		[loan_49] [decimal](17, 2) NULL,
+		[loan_50] [decimal](17, 2) NULL,
+		[ins_user] [nvarchar](50) NULL,
+		[ins_date] [datetime] NULL,
+		[upd_user] [nvarchar](50) NULL,
+		[upd_date] [datetime] NULL,
+		[total] [decimal](17, 2) NULL,
+		[loan_51] [decimal](17, 2) NULL,
+		[loan_52] [decimal](17, 2) NULL,
+		[loan_53] [decimal](17, 2) NULL,
+		[loan_54] [decimal](17, 2) NULL,
+		[loan_55] [decimal](17, 2) NULL,
+		[loan_56] [decimal](17, 2) NULL,
+		[posting_flag] [nvarchar](3) NULL,
+		[status_date] [datetime] NULL,
+		[loan_57] [decimal](17, 2) NULL,
+		[loan_58] [decimal](17, 2) NULL,
+		[loan_59] [decimal](17, 2) NULL,
+		[loan_60] [decimal](17, 2) NULL,
+		[loan_61] [decimal](17, 2) NULL,
+		[loan_62] [decimal](17, 2) NULL,
+		[loan_63] [decimal](17, 2) NULL,
+		[loan_64] [decimal](17, 2) NULL,
+		[loan_65] [decimal](17, 2) NULL,
+		[loan_66] [decimal](17, 2) NULL,
+		[loan_67] [decimal](17, 2) NULL,
+		[loan_68] [decimal](17, 2) NULL,
+		[loan_69] [decimal](17, 2) NULL,
+		[loan_70] [decimal](17, 2) NULL,
+		[loan_71] [decimal](17, 2) NULL,
+		[loan_72] [decimal](17, 2) NULL,
+		[loan_73] [decimal](17, 2) NULL,
+		[loan_74] [decimal](17, 2) NULL,
+		[loan_75] [decimal](17, 2) NULL
+	)
+
+
+	DROP TABLE IF EXISTS #CTOInsertLoanCodeXProductMappingData_IND_CODE_001
+
+	CREATE TABLE #CTOInsertLoanCodeXProductMappingData_IND_CODE_001(
+		Sl_No INT,
+		LoanCode NVARCHAR(50),
+		Gender NVARCHAR(20),
+		LoanCodeValue DECIMAL(17,2)		
+	)
+
+	INSERT INTO #CTOInsertLoanCodeXProductMappingData_IND_CODE_001
+	SELECT 
+	CAST(RIGHT(fq.LoanCode,2) AS INT) AS Sl_No,
+	fq.LoanCode,
+	'N' AS Gender,
+	COUNT(fq.BranchCode) AS BranchCode
+	FROM
+	(
+		SELECT 	 
+		ppm.LoanCode,	
+		gm.BranchCode	
+		From tmp_rpt_GroupAndMembersInfo gm	
+		INNER JOIN  Office o ON o.OfficeID = gm.OfficeID
+		INNER JOIN MemberCategory mc ON mc.MemberCategoryID=gm.CategoryID
+		INNER JOIN (SELECT DISTINCT MainProductCode FROM Product ) as pt ON LEFT(pt.MainProductCode,2)=LEFT(mc.MemberCategoryCode,2)
+		INNER JOIN 
+		(
+			SELECT DISTINCT  pm.LoanCode,pt.MainProductCode MainProductCode 
+			FROM Product pt
+			INNER JOIN pksf.POProductMapping pm ON pm.ProductCode=pt.ProductCode
+		
+		) AS ppm ON ppm.MainProductCode=pt.MainProductCode
+		WHERE gm.CategoryID <> 'oo' and o.IsActive=1 and CAST(gm.CategoryID AS INT) < 900
+		AND DATEADD(dd, DATEDIFF(dd, 0, gm.ProcessDate), 0)  BETWEEN @StartDateOfTheMonth AND @LastDateOfTheMonth
+		AND LEFT(gm.BranchCode,3)<>'999'
+		AND (MaleGroups+FemaleGroups+TotalGroups+MaleMembers+FemaleMembers+TotalMembers)>0			
+
+		UNION ALL
+
+		SELECT 
+		ppm.LoanCode,
+		gm.BranchCode
+		From tmp_rpt_GroupAndMembersInfo gm	
+		INNER JOIN  Office o ON o.OfficeID = gm.OfficeID
+		INNER JOIN (SELECT DISTINCT MainProductCode FROM Product ) as pt ON LEFT(pt.MainProductCode,2)=RIGHT(gm.CategoryID,2)
+		INNER JOIN 
+		(
+			SELECT DISTINCT  pm.LoanCode,pt.MainProductCode MainProductCode 
+			FROM Product pt
+			INNER JOIN pksf.POProductMapping pm ON pm.ProductCode=pt.ProductCode
+		
+		) AS ppm ON ppm.MainProductCode=pt.MainProductCode
+		WHERE gm.CategoryID <> 'oo' and o.IsActive=1 and CAST(gm.CategoryID AS INT) > 900
+		AND DATEADD(dd, DATEDIFF(dd, 0, gm.ProcessDate), 0)  BETWEEN @StartDateOfTheMonth AND @LastDateOfTheMonth
+		AND LEFT(gm.BranchCode,3)<>'999' and CAST(gm.CategoryID AS INT)>900
+		AND (MaleGroups+FemaleGroups+TotalGroups+MaleMembers+FemaleMembers+TotalMembers)>0	
+	) AS fq
+	GROUP BY fq.LoanCode
+	   	
+	SET @TotalMapCounts= 75;
+
+	WHILE (@InitMapCouns<=@TotalMapCounts)
+	BEGIN
+		SET @COLUMN=CASE WHEN LEN(CAST(@InitMapCouns AS VARCHAR(20)))=1 THEN '0'+CAST(@InitMapCouns AS VARCHAR(20)) ELSE CAST(@InitMapCouns AS VARCHAR(20)) END ;		
+
+		IF NOT EXISTS(SELECT TOP 1 *  FROM #CTOInsertLoanCodeXProductMappingData_IND_CODE_001 WHERE Sl_No=@InitMapCouns)
+		BEGIN
+			SET @InitMapCouns=@InitMapCouns+1;
+			CONTINUE;
+		END
+			
+		SELECT @LoanCode =LoanCode,@Gender=Gender,@LoanCodeValue=LoanCodeValue  FROM #CTOInsertLoanCodeXProductMappingData_IND_CODE_001 WHERE Sl_No=@InitMapCouns;
+		SET @LoanValueInText=CAST(@LoanCodeValue AS VARCHAR(30));
+		
+		EXEC ('
+		INSERT INTO #PRA_MN_RPT_TAB_XL_PD (po_code,mnyr,ind_code,m_f_flag,loan_'+@COLUMN+')
+		VALUES ( '+@OrganizationCode+','''+@FilteredDate+''',''001'','''+@Gender+''','+@LoanValueInText+')
+		');
+
+		SET @InitMapCouns=@InitMapCouns+1;
+	END;
+	
+	INSERT INTO PRA_MN_RPT_TAB_XL_PD   
+	SELECT 
+	   [po_code]
+      ,[mnyr]
+      ,[ind_code]
+      ,[m_f_flag]
+      ,SUM(ISNULL([loan_00],0)) AS [loan_00]
+      ,SUM(ISNULL([loan_01],0)) AS [loan_01]
+      ,SUM(ISNULL([loan_02],0)) AS [loan_02]
+      ,SUM(ISNULL([loan_03],0)) AS [loan_03]
+      ,SUM(ISNULL([loan_04],0)) AS [loan_04]
+      ,SUM(ISNULL([loan_05],0)) AS [loan_05]
+      ,SUM(ISNULL([loan_06],0)) AS [loan_06]
+      ,SUM(ISNULL([loan_07],0)) AS [loan_07]
+      ,SUM(ISNULL([loan_08],0)) AS [loan_08]
+      ,SUM(ISNULL([loan_09],0)) AS [loan_09]
+      ,SUM(ISNULL([loan_10],0)) AS [loan_10]
+      ,SUM(ISNULL([loan_11],0)) AS [loan_11]
+      ,SUM(ISNULL([loan_12],0)) AS [loan_12]
+      ,SUM(ISNULL([loan_13],0)) AS [loan_13]
+      ,SUM(ISNULL([loan_14],0)) AS [loan_14]
+      ,SUM(ISNULL([loan_15],0)) AS [loan_15]
+      ,SUM(ISNULL([loan_16],0)) AS [loan_16]
+      ,SUM(ISNULL([loan_17],0)) AS [loan_17]
+      ,SUM(ISNULL([loan_18],0)) AS [loan_18]
+      ,SUM(ISNULL([loan_19],0)) AS [loan_19]
+      ,SUM(ISNULL([loan_20],0)) AS [loan_20]
+      ,SUM(ISNULL([loan_21],0)) AS [loan_21]
+      ,SUM(ISNULL([loan_22],0)) AS [loan_22]
+      ,SUM(ISNULL([loan_23],0)) AS [loan_23]
+      ,SUM(ISNULL([loan_24],0)) AS [loan_24]
+      ,SUM(ISNULL([loan_25],0)) AS [loan_25]
+      ,SUM(ISNULL([loan_26],0)) AS [loan_26]
+      ,SUM(ISNULL([loan_27],0)) AS [loan_27]
+      ,SUM(ISNULL([loan_28],0)) AS [loan_28]
+      ,SUM(ISNULL([loan_29],0)) AS [loan_29]
+      ,SUM(ISNULL([loan_30],0)) AS [loan_30]
+      ,SUM(ISNULL([loan_31],0)) AS [loan_31]
+      ,SUM(ISNULL([loan_32],0)) AS [loan_32]
+      ,SUM(ISNULL([loan_33],0)) AS [loan_33]
+      ,SUM(ISNULL([loan_34],0)) AS [loan_34]
+      ,SUM(ISNULL([loan_35],0)) AS [loan_35]
+      ,SUM(ISNULL([loan_36],0)) AS [loan_36]
+      ,SUM(ISNULL([loan_37],0)) AS [loan_37]
+      ,SUM(ISNULL([loan_38],0)) AS [loan_38]
+      ,SUM(ISNULL([loan_39],0)) AS [loan_39]
+      ,SUM(ISNULL([loan_40],0)) AS [loan_40]
+      ,SUM(ISNULL([loan_41],0)) AS [loan_41]
+      ,SUM(ISNULL([loan_42],0)) AS [loan_42]
+      ,SUM(ISNULL([loan_43],0)) AS [loan_43]
+      ,SUM(ISNULL([loan_44],0)) AS [loan_44]
+      ,SUM(ISNULL([loan_45],0)) AS [loan_45]
+      ,SUM(ISNULL([loan_46],0)) AS [loan_46]
+      ,SUM(ISNULL([loan_47],0)) AS [loan_47]
+      ,SUM(ISNULL([loan_48],0)) AS [loan_48]
+      ,SUM(ISNULL([loan_49],0)) AS [loan_49]
+      ,SUM(ISNULL([loan_50],0)) AS [loan_50]
+      ,@Ins_User AS [ins_user]
+      ,GETDATE() AS [ins_date]
+      ,'' AS [upd_user]
+      ,'' AS [upd_date]
+      ,SUM(ISNULL([total],0)) AS [total]
+      ,SUM(ISNULL([loan_51],0)) AS [loan_51]
+      ,SUM(ISNULL([loan_52],0)) AS [loan_52]
+      ,SUM(ISNULL([loan_53],0)) AS [loan_53]
+      ,SUM(ISNULL([loan_54],0)) AS [loan_54]
+      ,SUM(ISNULL([loan_55],0)) AS [loan_55]
+      ,SUM(ISNULL([loan_56],0)) AS [loan_56]
+      ,'1' AS [posting_flag]
+      ,GETDATE() AS [status_date]
+      ,SUM(ISNULL([loan_57],0)) AS [loan_57]
+      ,SUM(ISNULL([loan_58],0)) AS [loan_58]
+      ,SUM(ISNULL([loan_59],0)) AS [loan_59]
+      ,SUM(ISNULL([loan_60],0)) AS [loan_60]
+      ,SUM(ISNULL([loan_61],0)) AS [loan_61]
+      ,SUM(ISNULL([loan_62],0)) AS [loan_62]
+      ,SUM(ISNULL([loan_63],0)) AS [loan_63]
+      ,SUM(ISNULL([loan_64],0)) AS [loan_64]
+      ,SUM(ISNULL([loan_65],0)) AS [loan_65]
+      ,SUM(ISNULL([loan_66],0)) AS [loan_66]
+      ,SUM(ISNULL([loan_67],0)) AS [loan_67]
+      ,SUM(ISNULL([loan_68],0)) AS [loan_68]
+      ,SUM(ISNULL([loan_69],0)) AS [loan_69]
+      ,SUM(ISNULL([loan_70],0)) AS [loan_70]
+      ,SUM(ISNULL([loan_71],0)) AS [loan_71]
+      ,SUM(ISNULL([loan_72],0)) AS [loan_72]
+      ,SUM(ISNULL([loan_73],0)) AS [loan_73]
+      ,SUM(ISNULL([loan_74],0)) AS [loan_74]
+      ,SUM(ISNULL([loan_75],0)) AS [loan_75]	
+	FROM #PRA_MN_RPT_TAB_XL_PD
+	GROUP BY [po_code],[mnyr],[ind_code],[m_f_flag]
+
+	
+END
+
+
+
+

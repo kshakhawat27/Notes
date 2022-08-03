@@ -1,0 +1,46 @@
+  
+https://docs.microsoft.com/en-us/dotnet/api/system.data.datatableextensions.asenumerable?view=net-6.0
+
+ public async Task<List<StockItem>> GetStockSumByFilter(BaseSearchFilter filter)
+        {
+            try
+            {
+
+                object[] arr = { filter.StoreId, filter.SearchTerm, filter.FromDate, filter.ToDate };
+                string sqlCommand = @"[dbo].[StockInTransaction_GetStockItemsSum] {0},{1},{2},{3}";
+                //  { filter.StoreId},{ filter.FromDate},{ filter.ToDate},{ filter.SearchTerm}
+
+                var query = db.StockItems
+                                        .FromSqlRaw(sqlCommand, arr).AsEnumerable()
+                                        .Select(x => new StockItem
+                                        {
+                                            ItemId = x.ItemId,
+                                            SKU = x.SKU,
+                                            Title = x.Title,
+                                            Stock = x.Stock,
+                                            StoreName=x.StoreName,
+                                            Model=x.Model
+                                        });
+
+                if (filter.IsReportData)
+                {
+                    var rptFilteredList = query.ToList();
+                    return rptFilteredList;
+                }
+                else
+                {
+
+                    var filteredList = query.Skip(filter.PageSize * (filter.PageNumber - 1)).Take(filter.PageSize).ToList();
+                    int totalCount = query.Count();
+
+                    filter.TotalCount = totalCount;
+                    return filteredList;
+                }
+
+                // return filteredList;
+            }
+            catch (Exception ex)
+            {
+                return new List<StockItem>();
+            }
+        }
