@@ -1,0 +1,3 @@
+ADD Formula In Report Data
+
+ToText(CDate({ado.TransactionDate}),"dd-MMM-yy")

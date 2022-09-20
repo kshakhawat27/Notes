@@ -1,0 +1,23 @@
+	-- server side pagination
+	
+	DECLARE 
+	 @CurrentPageNumber AS INT
+	,@RowsPerPage AS INT
+	,@TotalRowInTable AS FLOAT
+	,@TotalPageNumber  AS FLOAT
+	SET @CurrentPageNumber=1
+	SET @RowsPerPage=4
+
+	SELECT @TotalRowInTable = COUNT(*) FROM Member
+	SET @TotalPageNumber = CEILING(@TotalRowInTable/@RowsPerPage)
+
+	WHILE @TotalPageNumber > @CurrentPageNumber
+	BEGIN
+	  SELECT FirstName, PhoneNo FROM Member
+	  ORDER BY MemberCode  
+	  OFFSET (@CurrentPageNumber - 1) * @RowsPerPage ROWS
+	  FETCH NEXT @RowsPerPage ROWS only
+	  SET @CurrentPageNumber = @CurrentPageNumber + 1
+	END
+
+

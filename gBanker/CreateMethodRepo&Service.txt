@@ -1,0 +1,29 @@
+ Service------------------------
+public IEnumerable<ProductMainCodeModel> GetProductMainCodeList()
+        {
+            try
+            {               
+                return repository.GetProductMainCodeList();
+            }
+            catch (Exception ex)
+            {
+                return new List<ProductMainCodeModel>();
+            }
+        }
+
+Repo------------------------------
+public IEnumerable<ProductMainCodeModel> GetProductMainCodeList()
+        {
+            try
+            {
+                var sqlCommand = "select MainProductCode, MainItemName  from Product group by MainProductCode,MainItemName";
+
+                var results = DataContext.Database.SqlQuery<ProductMainCodeModel>(sqlCommand).ToList();
+
+                return results;
+            }
+            catch (Exception ex)
+            {
+                return new List<ProductMainCodeModel>();
+            }
+        }

@@ -1,0 +1,5 @@
+   $(document).ready(function () {
+        $(#MainProductCode).change(function () {
+            var val = $(#MainProductCode optionselected).text();;
+            console.log(val);
+        });

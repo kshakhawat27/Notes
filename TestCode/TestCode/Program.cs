@@ -73,6 +73,19 @@ namespace TestCode
 
             return (remainqty - 50);
         }
+        public static int CheckException()
+        {
+            object o2 = null;
+            try
+            {
+                int i2 = (int)o2;   // Error
+            }
+            catch (InvalidCastException e)
+            {
+                // recover from exception
+            }
+            return 0;
+        } 
       
         static void Main(string[] args)
         {
@@ -121,6 +134,7 @@ namespace TestCode
        
             Console.WriteLine(localDate.ToString());
             Console.WriteLine(Timestamp);
+            CheckException();
         }
 
         public static DataTable ToDataTable<T>(this IList<T> list)

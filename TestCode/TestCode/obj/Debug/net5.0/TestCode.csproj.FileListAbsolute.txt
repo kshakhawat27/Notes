@@ -21,7 +21,6 @@ D:\Notes\TestCode\TestCode\bin\Debug\net5.0\TestCode.runtimeconfig.dev.json
 D:\Notes\TestCode\TestCode\bin\Debug\net5.0\TestCode.dll
 D:\Notes\TestCode\TestCode\bin\Debug\net5.0\ref\TestCode.dll
 D:\Notes\TestCode\TestCode\bin\Debug\net5.0\TestCode.pdb
-D:\Notes\TestCode\TestCode\obj\Debug\net5.0\TestCode.csproj.AssemblyReference.cache
 D:\Notes\TestCode\TestCode\obj\Debug\net5.0\TestCode.GeneratedMSBuildEditorConfig.editorconfig
 D:\Notes\TestCode\TestCode\obj\Debug\net5.0\TestCode.AssemblyInfoInputs.cache
 D:\Notes\TestCode\TestCode\obj\Debug\net5.0\TestCode.AssemblyInfo.cs

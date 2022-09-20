@@ -1,0 +1,198 @@
+USE [gBankerMamataPKSF]
+GO
+/****** Object:  StoredProcedure [pksf].[PRA_MN_RPT_TAB_XL_PD_InsertManualData]    Script Date: 8/4/2022 2:56:05 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+-- =============================================
+-- Author:		Rejwanul Reja
+-- Create date: 25-Nov-2021
+-- Description:	Insert Program Data from Form input
+-- EXEC [pksf].[PRA_MN_RPT_TAB_XL_PD_InsertManualData] '0218','03/2022','152','loan_00','N','500','1'
+-- =============================================
+ALTER PROCEDURE [pksf].[PRA_MN_RPT_TAB_XL_PD_InsertManualData]
+	@OrganizationCode nvarchar(50),
+	@MNYR nvarchar(15),
+	@IndCode nvarchar(15),
+	@LoanCode nvarchar(15),
+	@M_F_FLAG nvarchar(15),
+	@Amount numeric(18,2),
+	@InsertUser nvarchar(50)
+AS
+BEGIN	
+	SET NOCOUNT ON;
+
+	DECLARE @po_code nvarchar(20),@Total NUMERIC(18,2), @IsOperationSuccess BIT =1,@CustomLoan_Code nvarchar(20);
+	SET @po_code=(SELECT top 1 PKSF_PO_CODE FROM pksf.PO_INFO_MAPPING WHERE MFI_PO_CODE=@OrganizationCode)
+	
+	SET @CustomLoan_Code=SUBSTRING(@LoanCode, CHARINDEX('_', @LoanCode)+1,LEN(@LoanCode)) ;
+
+	DECLARE @SQLqUERY NVARCHAR(MAX) ='';
+
+	BEGIN TRY
+	
+		IF EXISTS(SELECT TOP 1 * FROM PRA_MN_RPT_TAB_XL_PD WHERE ind_code=@IndCode and po_code=@po_code and mnyr=@MNYR)
+		BEGIN
+			SET @SQLqUERY =			
+			(N'
+				UPDATE PRA_MN_RPT_TAB_XL_PD  SET loan_'+@CustomLoan_Code+' ='+CAST(@Amount AS nvarchar(50))+'
+				WHERE ind_code='''+@IndCode+''' and po_code='''+@po_code+''' and mnyr='''+@MNYR+'''
+			');
+		END
+		ELSE 
+		BEGIN
+			SET @SQLqUERY = 
+			(N'
+				INSERT INTO PRA_MN_RPT_TAB_XL_PD (PO_CODE,MNYR,IND_Code,M_F_FLAG,loan_'+@CustomLoan_Code+',ins_user,ins_date,posting_flag,status_date)
+				SELECT 
+				'''+@po_code+''' AS PO_CODE
+				,'''+@MNYR+''' AS MNYR
+				,'''+@IndCode+''' AS IND_Code	
+				,'''+@M_F_FLAG+''' AS M_F_FLAG
+				,'+CAST(@Amount AS nvarchar(50))+' AS [loan_'+@CustomLoan_Code+'],				
+				'''+@InsertUser+''' AS ins_user,GETDATE() AS ins_date ,''1'' AS posting_flag,GETDATE() AS status_date
+			')
+		END			
+	
+		--PRINT (@SQLqUERY);
+		--RETURN;
+		EXEC (@SQLqUERY);
+
+		SET @Total =(
+				SELECT 
+				  SUM(ISNULL(loan_00,0))	
+				+ SUM(ISNULL(loan_01,0)) 
+				+ SUM(ISNULL(loan_02, 0))
+				+ SUM(ISNULL(loan_03,0)) 
+				+ SUM(ISNULL(loan_04,0)) 
+				+ SUM(ISNULL(loan_05,0)) 
+				+ SUM(ISNULL(loan_06,0)) 
+				+ SUM(ISNULL(loan_07,0)) 
+				+ SUM(ISNULL(loan_08,0)) 
+				+ SUM(ISNULL(loan_09,0)) 
+				+ SUM(ISNULL(loan_10,0)) 
+				+ SUM(ISNULL(loan_11,0)) 
+				+ SUM(ISNULL(loan_12,0)) 
+				+ SUM(ISNULL(loan_13,0)) 
+				+ SUM(ISNULL(loan_14,0)) 
+				+ SUM(ISNULL(loan_15,0)) 
+				+ SUM(ISNULL(loan_16,0)) 
+				+ SUM(ISNULL(loan_17,0)) 
+				+ SUM(ISNULL(loan_18,0)) 
+				+ SUM(ISNULL(loan_19,0)) 
+				+ SUM(ISNULL(loan_20,0)) 
+				+ SUM(ISNULL(loan_21,0)) 
+				+ SUM(ISNULL(loan_22,0)) 
+				+ SUM(ISNULL(loan_23,0)) 
+				+ SUM(ISNULL(loan_24,0)) 
+				+ SUM(ISNULL(loan_25,0)) 
+				+ SUM(ISNULL(loan_26,0)) 
+				+ SUM(ISNULL(loan_27,0)) 
+				+ SUM(ISNULL(loan_28,0)) 
+				+ SUM(ISNULL(loan_29,0)) 
+				+ SUM(ISNULL(loan_30,0)) 
+				+ SUM(ISNULL(loan_31,0)) 
+				+ SUM(ISNULL(loan_32,0)) 
+				+ SUM(ISNULL(loan_33,0)) 
+				+ SUM(ISNULL(loan_34,0)) 
+				+ SUM(ISNULL(loan_35,0)) 
+				+ SUM(ISNULL(loan_36,0)) 
+				+ SUM(ISNULL(loan_37,0)) 
+				+ SUM(ISNULL(loan_38,0)) 
+				+ SUM(ISNULL(loan_39,0)) 
+				+ SUM(ISNULL(loan_40,0)) 
+				+ SUM(ISNULL(loan_41,0)) 
+				+ SUM(ISNULL(loan_42,0)) 
+				+ SUM(ISNULL(loan_43,0)) 
+				+ SUM(ISNULL(loan_44,0)) 
+				+ SUM(ISNULL(loan_45,0)) 
+				+ SUM(ISNULL(loan_46,0)) 
+				+ SUM(ISNULL(loan_47,0)) 
+				+ SUM(ISNULL(loan_48,0)) 
+				+ SUM(ISNULL(loan_49,0)) 
+				+ SUM(ISNULL(loan_50,0)) 
+				+ SUM(ISNULL(loan_51,0)) 
+				+ SUM(ISNULL(loan_52,0)) 
+				+ SUM(ISNULL(loan_53,0)) 
+				+ SUM(ISNULL(loan_54,0)) 
+				+ SUM(ISNULL(loan_55,0)) 
+				+ SUM(ISNULL(loan_56,0)) 
+				+ SUM(ISNULL(loan_57,0))  
+				+ SUM(ISNULL(loan_58,0)) 
+				+ SUM(ISNULL(loan_59,0)) 
+				+ SUM(ISNULL(loan_60,0))
+				+ SUM(ISNULL(loan_61,0)) 
+				+ SUM(ISNULL(loan_62,0)) 
+				+ SUM(ISNULL(loan_63,0)) 
+				+ SUM(ISNULL(loan_64,0)) 
+				+ SUM(ISNULL(loan_65,0)) 
+				+ SUM(ISNULL(loan_66,0)) 
+				+ SUM(ISNULL(loan_67,0))  
+				+ SUM(ISNULL(loan_68,0)) 
+				+ SUM(ISNULL(loan_69,0)) 
+				+ SUM(ISNULL(loan_70,0))
+				+ SUM(ISNULL(loan_71,0)) 
+				+ SUM(ISNULL(loan_72,0)) 
+				+ SUM(ISNULL(loan_73,0)) 
+				+ SUM(ISNULL(loan_74,0)) 
+				+ SUM(ISNULL(loan_75,0)) 
+				+ SUM(ISNULL(loan_76,0)) 
+				+ SUM(ISNULL(loan_77,0))  
+				+ SUM(ISNULL(loan_78,0)) 
+				+ SUM(ISNULL(loan_79,0)) 
+				+ SUM(ISNULL(loan_80,0))
+				+ SUM(ISNULL(loan_81,0)) 
+				+ SUM(ISNULL(loan_82,0)) 
+				+ SUM(ISNULL(loan_83,0)) 
+				+ SUM(ISNULL(loan_84,0)) 
+				+ SUM(ISNULL(loan_85,0)) 
+				+ SUM(ISNULL(loan_86,0)) 
+				+ SUM(ISNULL(loan_87,0))  
+				+ SUM(ISNULL(loan_88,0)) 
+				+ SUM(ISNULL(loan_89,0)) 
+				+ SUM(ISNULL(loan_90,0))
+				+ SUM(ISNULL(loan_91,0)) 
+				+ SUM(ISNULL(loan_92,0)) 
+				+ SUM(ISNULL(loan_93,0)) 
+				+ SUM(ISNULL(loan_94,0)) 
+				+ SUM(ISNULL(loan_95,0)) 
+				+ SUM(ISNULL(loan_96,0)) 
+				+ SUM(ISNULL(loan_97,0))  
+				+ SUM(ISNULL(loan_98,0)) 
+				+ SUM(ISNULL(loan_99,0)) 
+				+ SUM(ISNULL(loan_100,0))	
+			FROM pksf.PRA_MN_RPT_TAB_XL_PD
+			WHERE ind_code=@IndCode and po_code=@po_code and mnyr=@MNYR
+			GROUP BY ind_code,po_code,mnyr
+		)
+				
+		
+		IF(@IndCode='057' OR @IndCode='0152' OR @IndCode='153' OR @IndCode='154' OR @IndCode='155')
+		BEGIN
+			DECLARE @LoanTotal DECIMAL(18,2)
+			EXEC [pksf].[PRA_MN_RPT_TAB_XL_PD_GetTotals] @MNYR, @IndCode, @LoanTotal OUTPUT
+			SET @Total=  @LoanTotal 
+		END
+				
+		--update total
+		UPDATE PRA_MN_RPT_TAB_XL_PD  SET total = @Total
+		WHERE ind_code=@IndCode and po_code=@po_code and mnyr=@MNYR
+			
+
+	END TRY
+	BEGIN CATCH
+		PRINT ERROR_MESSAGE()
+		SET @IsOperationSuccess=0
+	END CATCH
+
+	SELECT @IsOperationSuccess
+END
+
+
+
+
+
+
+
+
