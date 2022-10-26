@@ -1,0 +1,205 @@
+Managing Data Concurrency
+
+Locking Machanism:
+------------------
+-Enabling hr user
+-let's locating the hr user directory
+[oracle@dba167 ~]$ cd /u01/app/oracle/product/19.3.0/db_1
+
+--find by hr
+[oracle@dba167 db_1]$ find -name hr
+
+--Look the location like below..
+./demo/schema/human_resources/
+
+--let's cd to 
+[oracle@dba167 db_1]$ cd /u01/app/oracle/product/19.3.0/db_1/demo/schema/human_resources
+
+[oracle@dba167 human_resources]$ sqlplus / as sysdba;
+
+SQL> @hr_main.sql
+
+Password: hr
+Tablespace : users
+tempTablespace: temp
+Log Location: /home/oracle/hrSchemas.sql
+
+---------------------------------------------------------------
+
+-Connect with HR User
+
+SQL> select  Salary from Employees where employee_id=120;
+
+    SALARY
+----------
+      8000
+
+1 row selected.
+
+--let's update the salary for employee id = 120
+
+SQL> update employees set salary = 9000 where employee_id = 120;
+
+1 row updated.
+
+-let's see the result for updated salary 
+
+SQL> select  Salary from Employees where employee_id=120;
+
+    SALARY
+----------
+      9000
+
+1 row selected.
+
+
+-Now we will create another session for hr user session 
+SQL> conn hr/hr
+Connected.
+SQL> select salary from employees where employee_id=120;
+
+    SALARY
+----------
+      8000
+	  
+-Look, here the value of salary 8000 shows from undo tablepace because of no commit executed on that DML operation.
+
+-Now we'll update salary with this new session of hr
+
+SQL> update employees set salary = 9000 where employee_id = 120;
+
+-Look, update operation is in progress because of previous session update done but not commited.
+-So this stands for locking machanism in oracle and it wil work on salar row of data by different user/session.
+
+
+For Blocker Session Identification
+#####################################
+--So, How do DBA can observe which session is on locking...
+--let's use the below script to check this one..
+[Run this on sql developer]
+SELECT  vp.spid,c.inst_id,b.session_id sid,c.serial#,a.object_name,
+       a.owner object_owner,
+       Decode(b.locked_mode, 0, 'None',
+                             1, 'Null (NULL)',
+                             2, 'Row-S (SS)',
+                             3, 'Row-X (SX)',
+                             4, 'Share (S)',
+                             5, 'S/Row-X (SSX)',
+                             6, 'Exclusive (X)',
+                             b.locked_mode) locked_mode,
+        b.oracle_username,
+        c.program,
+        d.event,
+        c.status,
+        c.last_call_et,
+        c.sql_address,
+        e.sql_text, c.logon_time
+FROM   all_objects a,
+       gv$locked_object b,
+       gv$session c,
+  gv$session_wait d,
+gv$sqlarea e,
+gv$process vp
+WHERE  a.object_id = b.object_id
+and b.session_id=c.sid
+and c.sid=d.sid and c.paddr=vp.addr
+and e.address=c.sql_address and lower(d.event) like '%enq%'
+ORDER BY 1;
+
+--Result:
+5409	1	47	5843	EMPLOYEES	HR	Row-X (SX)	HR	sqlplus@dba167.rejawebs.com (TNS V1-V3)	enq: TX - row lock contention	ACTIVE	703	000000006A415A80	update employees set salary = 9000 where employee_id = 120	7/21/2022 1:54:08 PM
+
+So, from here if we kill the process by SID and Serial#
+
+and another option is if the first session user commit/rollback the transaction then the next session will execute.
+-so we will rollback the first session.
+SQL> rollback;
+
+Rollback complete.
+
+--and the session update operation now executed like 
+
+1 row updated.
+
+
+--Now will see the session killing....
+Udpate the salary again from first session...
+
+SQL> update employees set salary = 9000 where employee_id = 120;
+
+--Session is not Locked
+
+--let's kill sesssion for next one by using "Blocker Session Identification" query snippet
+
+SYS: SQL> alter system kill session '32,47776' immediate;
+
+system KILL altered.
+
+
+
+Deadlock:
+-----------
+A Deadlock operation can be arriesed when both session lock 
+let's have a look to achieved this deadlock example...
+
+session 01:
+SQL> update employees set salary = 9000 where employee_id = 120;
+
+
+session 02:
+SQL> update employees set salary = salary*1.1 where employee_id = 130;
+
+
+session 01:
+SQL> update employees set salary = salary*1.1 where employee_id = 130;
+
+
+session 02:
+SQL> update employees set salary = 9000 where employee_id = 120;
+
+Now look at the session 01 and it showing deadlock.
+
+ERROR at line 1:
+ORA-00060: deadlock detected while waiting for resource
+
+Now execute for session 01 
+
+SQL> rollback;
+
+Rollback complete.
+
+SQL>
+
+then the session 02 transaction will be executed
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+

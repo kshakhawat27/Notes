@@ -1,0 +1,1 @@
+var model = @Html.Raw(Json.Encode(Model.IsApproved));

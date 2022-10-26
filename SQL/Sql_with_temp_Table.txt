@@ -1,0 +1,69 @@
+ALTER PROCEDURE [pksf].[Proc_GetWorkingAreaInfo]
+	-- Add the parameters for the stored procedure here
+AS
+BEGIN
+	
+	SET NOCOUNT ON;
+	DROP TABLE If EXISTS #Member_Working_Area
+    
+	CREATE Table #Member_Working_Area
+	( CategoryName VARCHAR(max),
+	  NumberOfMember INT ,
+	  NumberOfDistrict INT,
+	  NumberOfUpozilla INT,
+	  NumberOfUnion INT,
+	  NumberOfVillage INT
+     )
+	 INSERT INTO #Member_Working_Area 	
+	 SELECT 
+   --m.MemberID, c.DistrictCode, c.UpozillaCode, c.UnionCode,c.VillageCode
+	mc.CategoryName
+	,COUNT(m.MemberID) AS NumberOfMember
+   ,COUNT(DISTINCT c.DistrictCode) AS NumberOfDistrict
+   ,COUNT(DISTINCT c.UpozillaCode) AS NumberOfUpozilla
+   ,COUNT(DISTINCT c.UnionCode) AS NumberOfUnion
+   ,COUNT(DISTINCT c.VillageCode) AS NumberOfVillage
+FROM Member m
+INNER JOIN Center c
+	ON m.CenterID = c.CenterID
+INNER JOIN dbo.District dis
+	ON dis.DistrictCode = c.DistrictCode
+INNER JOIN Upozilla up
+	ON up.UpozillaCode = c.UpozillaCode
+INNER JOIN [Union] un
+	ON un.UnionCode = c.UnionCode
+INNER JOIN LgVillage vi
+	ON vi.VillageCode = c.VillageCode
+INNER JOIN MemberCategory mc
+	ON mc.MemberCategoryID = m.MemberCategoryID
+
+WHERE LEFT(mc.MemberCategoryCode, 1) NOT IN ('7')
+GROUP BY mc.CategoryName
+
+ INSERT INTO #Member_Working_Area 	
+	 SELECT 
+   --m.MemberID, c.DistrictCode, c.UpozillaCode, c.UnionCode,c.VillageCode
+   'Total'
+  ,COUNT(DISTINCT m.MemberID) AS NumberOfMember
+   ,COUNT(DISTINCT c.DistrictCode) AS NumberOfDistrict
+   ,COUNT(DISTINCT c.UpozillaCode) AS NumberOfUpozilla
+   ,COUNT(DISTINCT c.UnionCode) AS NumberOfUnion
+   ,COUNT(DISTINCT c.VillageCode) AS NumberOfVillage
+FROM Member m
+INNER JOIN Center c
+	ON m.CenterID = c.CenterID
+INNER JOIN dbo.District dis
+	ON dis.DistrictCode = c.DistrictCode
+INNER JOIN Upozilla up
+	ON up.UpozillaCode = c.UpozillaCode
+INNER JOIN [Union] un
+	ON un.UnionCode = c.UnionCode
+INNER JOIN LgVillage vi
+	ON vi.VillageCode = c.VillageCode
+INNER JOIN MemberCategory mc
+	ON mc.MemberCategoryID = m.MemberCategoryID
+
+
+select * from #Member_Working_Area 	
+
+END

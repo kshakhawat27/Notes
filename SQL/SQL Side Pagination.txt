@@ -1,0 +1,61 @@
+USE [gBankerShataphool]
+GO
+/****** Object:  StoredProcedure [pksf].[PRA_MN_RPT_TAB_XL_BD_GetBasicDataList]    Script Date: 10/19/2022 2:58:46 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+-- =============================================
+-- Author       :	Reja
+-- Create date  :	31-Oct-2021
+-- [pksf].[PRA_MN_RPT_TAB_XL_BD_GetBasicDataList] '096', '','','','1','True',1,10
+-- =============================================
+ALTER PROCEDURE [pksf].[PRA_MN_RPT_TAB_XL_BD_GetBasicDataList]
+	@OrgCode varchar(20),
+	@MNYR nvarchar(20),
+	@ind_code nvarchar(250),
+	@M_F_flag nvarchar(20),
+	@SYNCED_STATUS nvarchar(5),
+	@IsCalculateTotal BIT='true',
+	
+	 --Pagination Parameters 
+	@PageNumber INT = 1,
+	@PageSize INT = 20
+AS
+BEGIN
+	
+	SET NOCOUNT ON;
+	DECLARE @TotalCount INT=0;
+
+
+	DECLARE @PO_CODE NVARCHAR(100)=''
+	SET @PO_CODE=(SELECT TOP 1 PKSF_PO_CODE FROM pksf.PO_INFO_MAPPING WHERE MFI_PO_CODE=@OrgCode)
+
+	IF(@IsCalculateTotal='true')
+	BEGIN
+		SELECT @TotalCount=COUNT(*) 
+		FROM [pksf].[PRA_MN_RPT_TAB_XL_BD]
+		WHERE PO_CODE = @PO_CODE 
+		AND (@MNYR IS NULL OR @MNYR = '' OR mnyr=@MNYR)
+		AND (@ind_code IS NULL OR @ind_code = '' OR [IND_CODE]=@ind_code)
+		AND (@M_F_flag IS NULL OR @M_F_flag = '' OR [M_F_FLAG]=@M_F_flag)
+		AND (@SYNCED_STATUS IS NULL OR @SYNCED_STATUS = '' OR [posting_flag]=@SYNCED_STATUS)
+
+	END
+
+	SELECT TotalCount = @TotalCount,
+	[PO_CODE], [MNYR], [IND_CODE],(SELECT [pksf].[fn_IndicatorInfoByCode]([IND_CODE])) AS  [IND_INF], [M_F_FLAG], [BD_PKSF_FUND], [BD_NON_PKSF_FUND], [BD_TOTAL_FUND], [POSTING_FLAG],CASE WHEN [POSTING_FLAG]='1' THEN 'NOT SYNCED' ELSE 'SYNCED' END AS SYNCED_STATUS
+	FROM [pksf].[PRA_MN_RPT_TAB_XL_BD]
+	WHERE PO_CODE = @PO_CODE 
+	AND (@MNYR IS NULL OR @MNYR = '' OR mnyr=@MNYR)
+	AND (@ind_code IS NULL OR @ind_code = '' OR [IND_CODE]=@ind_code)
+	AND (@M_F_flag IS NULL OR @M_F_flag = '' OR [M_F_FLAG]=@M_F_flag)
+	AND (@SYNCED_STATUS IS NULL OR @SYNCED_STATUS = '' OR [posting_flag]=@SYNCED_STATUS)
+	ORDER BY [IND_CODE] ASC
+
+	OFFSET ((@PageNumber - 1) * @PageSize) ROWS
+	FETCH NEXT @PageSize ROWS ONLY;
+
+END
+
+

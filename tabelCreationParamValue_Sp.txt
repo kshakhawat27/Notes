@@ -1,0 +1,366 @@
+USE [gBankerADDINMIS]
+GO
+/****** Object:  StoredProcedure [dbo].[Proc_RPT_At_a_Glance]    Script Date: 10/10/2022 3:49:57 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+/*
+Select * From Office
+
+Exec Proc_RPT_At_a_Glance '2019-01-01','2019-01-31',48
+
+*/
+
+
+ALTER Procedure [dbo].[Proc_RPT_At_a_Glance] (@FirstDate SmallDateTime,@Date SmallDateTime,@Org int)
+
+
+As
+Begin
+
+Declare @Office int 
+--,@ProcessDate_PO Date,@FirstDate Date,@Office_PO int
+--	,@DateFrom smalldatetime,@DateTo smalldatetime,@Qtype int
+	,@YrStartDate Date,@CashInhandCode NVarchar(10), @CashAtBankCode NVarchar(10)
+	,@ToDate Date
+SET @ToDate=@Date
+--SET @FirstDate=(cast((cast(year(@ToDate) as char(4))+'-'+cast(month(@ToDate) as char(2))+'-01') as smalldatetime))
+
+Select @YrStartDate=DATEADD(dd,1,Max(YearClosingDate)) From(Select Case When Month(@Date) In (1,2,3,4,5,6) AND Month(a.YearClosingDate)=6 Then (cast((cast(year(DateAdd(yy,-1,@Date)) as char(4))+'-'+cast(month(a.YearClosingDate) as char(2))+'-'+cast(Day(a.YearClosingDate) as char(2))) as smalldatetime))
+When Month(@Date) In (7,8,9,10,11,12) AND Month(a.YearClosingDate)=6 Then (cast((cast(year(@Date) as char(4))+'-'+cast(month(a.YearClosingDate) as char(2))+'-'+cast(Day(a.YearClosingDate) as char(2))) as smalldatetime))
+Else (cast((cast(year(@Date) as char(4))+'-'+cast(month(a.YearClosingDate) as char(2))+'-'+cast(Day(a.YearClosingDate) as char(2))) as smalldatetime)) END AS YearClosingDate
+From ApplicationSettings a --Where a.OfficeID In (@Office)
+) f
+
+select @CashInhandCode = Max(CashBook) from ApplicationSettings --where OfficeID = @Office
+select @CashAtBankCode = Max(BankAccount) from ApplicationSettings --where OfficeID = @Office
+
+
+	DECLARE Insert_Branch CURSOR FOR 
+	select OfficeID,OrgID from Office Where Officelevel=4 And Orgid=@Org
+	OPEN Insert_Branch
+	FETCH NEXT FROM Insert_Branch INTO @Office,@Org
+	WHILE @@FETCH_STATUS = 0
+	BEGIN
+
+
+Declare @OffLinetbl Table (
+						 OfficeID Int
+						,ReportingDate SmallDateTime
+						,Staff int DEFAULT 0
+						,TotalSamity int DEFAULT 0
+						,NewMemberAdmission int DEFAULT 0
+						,NewDropOut int DEFAULT 0
+						,TotalMember int DEFAULT 0
+
+						,CumulativeRecoverable Numeric(18,2) DEFAULT 0
+						,CumulativeRecovery Numeric(18,2) DEFAULT 0
+						,CurrentPrincipalLoan Numeric(18,2) DEFAULT 0
+
+						,CurrentRecoverable Numeric(18,2) DEFAULT 0
+						,CurrentRecovery Numeric(18,2) DEFAULT 0
+						,OverdueRecovery Numeric(18,2) DEFAULT 0
+						,AdvanceRecovery Numeric(18,2) DEFAULT 0
+						,TotalRecovery Numeric(18,2) DEFAULT 0
+
+						,NewDueAmount Numeric(18,2) DEFAULT 0
+						,NewDueBorower int DEFAULT 0
+
+						,NewDisburseLoanee int DEFAULT 0
+						,NewDisburseAmount Numeric(18,2) DEFAULT 0
+						,NewFullyPaid int DEFAULT 0
+						,NewFullyPaidAmount Numeric(18,2) DEFAULT 0
+
+						,TotalBorrower int DEFAULT 0
+						,LoanOutstanding Numeric(18,2) DEFAULT 0
+						,SCOutstanding Numeric(18,2) DEFAULT 0
+						,TotalOutstanding Numeric(18,2) DEFAULT 0
+
+						,CurrentDueAmount Numeric(18,2) DEFAULT 0
+						,CurrentDueBorrower int DEFAULT 0
+						,OverDueAmount Numeric(18,2) DEFAULT 0
+						,OverDueBorrower int DEFAULT 0
+						,TotalDueAmount Numeric(18,2) DEFAULT 0
+						,TotalDueBorrower int DEFAULT 0
+						
+						,CRR Numeric(18,2) DEFAULT 0
+						,OTR Numeric(18,2) DEFAULT 0
+						,PAR Numeric(18,2) DEFAULT 0
+						,SavingsBalance Numeric(18,2) DEFAULT 0
+						,BankBalance Numeric(18,2) DEFAULT 0			 
+						,CashInHand Numeric(18,2) DEFAULT 0
+						,PARAmountLoan Numeric(18,2) DEFAULT 0
+						,PARAmountSC Numeric(18,2) DEFAULT 0
+						,AdvanceLoanRealizedCL Numeric(18,2) DEFAULT 0
+						,AdvanceSCRealizedCL Numeric(18,2) DEFAULT 0
+						,ThisYearSurplus Numeric(18,2) DEFAULT 0
+						,CurMonthSurplus Numeric(18,2) DEFAULT 0
+						,WriteOffBalance Numeric(18,2) DEFAULT 0
+						)
+
+----Staff
+	Insert @OffLinetbl (OfficeID,Staff)
+Select OfficeID
+		,Count(Distinct m.EmployeeID) as EmpQty
+			From (
+					Select m.OfficeID,m.EmployeeID,m.Gender
+					From Employee m 
+					Where m.IsActive=1
+					AND m.OfficeID In (@Office)
+					--AND m.Designation In ('BM','B.M','B.M.','SBM','S.B.M','S.B.M.','ABM','A.B.M','A.B.M.')
+					AND m.EmployeeStatus In (1)
+					AND m.JoiningDate<=@ToDate
+						Union ALL
+					Select m.OfficeID,m.EmployeeID,m.Gender
+					From Employee m 
+					Where m.IsActive=1
+					AND m.OfficeID In (@Office)
+					--AND m.Designation In ('BM','B.M','B.M.','SBM','S.B.M','S.B.M.','ABM','A.B.M','A.B.M.')
+					AND m.EmployeeStatus In (0)
+					AND m.JoiningDate<=@ToDate AND m.ReleaseDate>@ToDate
+			) m
+			Group By OfficeID
+
+----TotalSamity
+	Insert @OffLinetbl (OfficeID,TotalSamity)
+		Select e.OfficeID,COUNT(distinct e.CenterID) TotalGroup from 
+		(
+			select distinct Member.OfficeID,Member.CenterID 
+			from Member 
+			Inner Join MemberCategory mc ON Member.MemberCategoryID=mc.MemberCategoryID
+			Where Member.IsActive=1 AND Member.OfficeID=@Office 
+			and Member.MemberStatus=1 --And Left(Member.Gender,1)='F' 
+			And Member.MemCategory='1' AND JoinDate <= @Date 
+			AND Left(mc.MemberCategoryCode,1) not in('7')
+			UNION ALL
+			select distinct Member.OfficeID,Member.CenterID 
+			from Member 
+			Inner Join MemberCategory mc ON Member.MemberCategoryID=mc.MemberCategoryID
+			Where Member.IsActive=1 AND Member.OfficeID=@Office 
+			And Member.MemCategory='1' 	--And Left(Member.Gender,1)='F'
+			AND JoinDate <=@Date AND MemberStatus=2 AND ReleaseDate >@Date
+			AND Left(mc.MemberCategoryCode,1) not in('7')
+
+		) as e
+		Group By e.OfficeID
+
+----NewMemberAdmission
+	Insert @OffLinetbl (OfficeID,NewMemberAdmission)
+		SELECT Member.OfficeID,  COUNT(Member.MemberID) AS ThisMonthAdmission
+			FROM  Member 
+			Inner JOIN MemberCategory as mc on Member.MemberCategoryID=mc.MemberCategoryID
+			Left Join (Select * From TransferHistory Where TransferDate between @FirstDate and @Date) as t ON Member.MemberID=t.TrMemberID AND Member.JoinDate=t.TransferDate ---Category/Member Transfer Data 2016-09-28
+			WHERE  Member.IsActive=1 AND Member.OfficeID=@Office 
+			and JoinDate between @FirstDate and @Date 
+			And MemCategory='1'
+			--AND MemberStatus<>'5' 
+			AND MemberStatus Not In ('5','0')
+			AND Left(mc.MemberCategoryCode,1) not in('7')
+			AND t.TrMemberID is null ---Category/Member Transfer Data 2016-09-28
+		GROUP BY Member.OfficeID
+
+----NewDropOut
+	Insert @OffLinetbl (OfficeID,NewDropOut)
+		SELECT Member.OfficeID, COUNT(Member.MemberID) AS ThisMonthWithdrawn
+			FROM  Member 
+			Inner JOIN MemberCategory as mc on Member.MemberCategoryID=mc.MemberCategoryID
+			Left Join (Select * From TransferHistory Where TransferDate between @FirstDate and @Date) as t ON Member.MemberID=t.MemberID AND Member.ReleaseDate=t.TransferDate ---Category/Member Transfer Data 2016-09-28
+			WHERE Member.IsActive=1 AND Member.OfficeID=@Office 
+			and ReleaseDate between @FirstDate and @Date 
+			And MemCategory='1'
+			--AND MemberStatus<>'5'
+			AND MemberStatus Not In ('5','0')
+			AND Left(mc.MemberCategoryCode,1) not in('7')
+			AND t.MemberID is null ---Category/Member Transfer Data 2016-09-28
+		GROUP BY Member.OfficeID
+
+----TotalMember
+	Insert @OffLinetbl (OfficeID,TotalMember)
+		SELECT o.OfficeID,  COUNT(o.MemberID) AS MaleMember
+			FROM(	--Active Member Uptodate
+				SELECT m.OfficeID, m.MemberCategoryID, m.MemberID 
+				FROM  Member m
+				Inner Join MemberCategory mc ON m.MemberCategoryID=mc.MemberCategoryID
+				WHERE m.IsActive=1 AND m.OfficeID=@Office
+				AND m.MemberStatus=1
+				AND m.JoinDate <= @Date --AND left(Gender,1)='M'
+				--Added On 26 Aug 2013 Ref note Date:12 Aug 2013	
+				And m.MemCategory='1'
+				AND Left(mc.MemberCategoryCode,1) not in('7')
+				UNION ALL
+				--Current Month Drop Member
+				SELECT m.OfficeID, m.MemberCategoryID, m.MemberID
+				FROM  Member m
+				Inner Join MemberCategory mc ON m.MemberCategoryID=mc.MemberCategoryID
+				WHERE m.IsActive=1 AND m.OfficeID=@Office 
+				AND m.MemberStatus=2
+				AND m.JoinDate <=@Date AND m.ReleaseDate >  @Date 
+				--AND left(m.Gender,1)='M'
+				And m.MemCategory='1'
+				AND Left(mc.MemberCategoryCode,1) not in('7')
+			  ) AS o 
+			GROUP BY o.OfficeID
+
+/*
+
+,CurrentPrincipalLoan 
+
+,NewFullyPaid
+,NewFullyPaidAmount 
+
+,CurrentDueBorrower
+,OverDueBorrower
+
+,OTR 
+
+*/
+
+----CumulativeRecoverable,CumulativeRecovery,TotalBorrower,LoanOutstanding,SCOutstanding,CurrentDueAmount,OverDueAmount,TotalDueAmount,TotalDueBorrower,PARAmountLoan,PARAmountSC
+Insert @OffLinetbl (OfficeID,CumulativeRecoverable,CumulativeRecovery,TotalBorrower,LoanOutstanding,SCOutstanding,TotalOutstanding
+,CurrentDueAmount,OverDueAmount,TotalDueAmount,TotalDueBorrower,PARAmountLoan,PARAmountSC,AdvanceLoanRealizedCL,AdvanceSCRealizedCL
+,CurrentRecoverable,CurrentRecovery,OverdueRecovery,AdvanceRecovery,TotalRecovery,NewDueAmount,NewDueBorower
+,NewDisburseLoanee,NewDisburseAmount,WriteOffBalance
+)
+Select OfficeID,LoanRealizableCL,LoanRealizedCL,NoOfLoaneeCL,LoanOutstandingCL,SCOutstandingCL,(LoanOutstandingCL+SCOutstandingCL) as TotalOutstanding
+,LoanDueCurrent,LoanOverDue,(LoanDueCurrent+LoanOverDue) as TotalDueAmount,OverDueLoaneeCL,PARAmountLoan,PARAmountSC,AdvanceLoanRealizedCL,AdvanceSCRealizedCL
+,CurrentRecoverable,CurrentRecovery,OverdueRecovery,AdvanceRecovery,TotalRecovery,NewDueAmount,NewDueBorower
+,NewDisburseLoanee,NewDisburseAmount,WriteOffBalance+WriteOffSC
+From ufn_LoanPortfolio (@FirstDate,@Date,@Office)
+
+
+----SavingsBalance
+	Insert @OffLinetbl (OfficeID,SavingsBalance)
+		Select OfficeID,SUM(SavingsOutstanding) SavingsBalance
+			From(
+				Select sr.OfficeID
+				,((SUM(sr.Deposit) + SUM(sr.MonthlyInterest)) - SUM(sr.Withdrawal)) as SavingsOutstanding
+				from SavingTrx sr inner JOIN Member m on sr.OfficeID = m.OfficeID AND sr.CenterID = m.CenterID AND sr.MemberID = m.MemberID
+				inner join Product ic on sr.ProductID=ic.ProductID
+				inner join MemberCategory mc on sr.MemberCategoryID=mc.MemberCategoryID
+				where sr.TransactionDate<=@Date 
+				AND sr.OfficeID=@Office 
+				--and  left(m.Gender,1)  = 'F' AND sr.IsActive=1 --AND sr.OrgID=@Org
+				and Left(ic.ProductCode,2) not in ('20')
+				group by sr.OfficeID
+			  ) s Group By OfficeID
+
+----BankBalance
+	Insert @OffLinetbl (OfficeID,BankBalance)
+				Select OfficeID,SUM(d.Debit-d.Credit) as BankBalance
+				From AccTrxMaster as m Inner Join AccTrxDetail as d ON m.TrxMasterID=d.TrxMasterID Inner Join AccChart as a ON d.AccID=a.AccID
+				Where d.IsActive=1 AND m.IsActive=1 AND m.IsPosted=1
+				--AND m.TrxDate Between '2016-07-01' AND '2017-06-30'
+				AND m.TrxDate Between @YrStartDate AND @Date
+				and m.OfficeID=@Office
+				--AND m.TrxDate <='2018-01-31'
+				--AND a.firstLevel In ('5','9')
+				AND a.SecondLevel=@CashAtBankCode
+				Group By OfficeID
+
+----CashInHand
+	Insert @OffLinetbl (OfficeID,CashInHand)
+Select OfficeID,SUM(d.Debit-d.Credit) as CashInHand
+From AccTrxMaster as m Inner Join AccTrxDetail as d ON m.TrxMasterID=d.TrxMasterID Inner Join AccChart as a ON d.AccID=a.AccID
+Where d.IsActive=1 AND m.IsActive=1 AND m.IsPosted=1
+--AND m.TrxDate Between '2016-07-01' AND '2017-06-30'
+AND m.TrxDate Between @YrStartDate AND @Date
+and m.OfficeID=@Office
+--AND m.TrxDate <='2018-01-31'
+--AND a.firstLevel In ('5','9')
+AND a.AccCode=@CashInhandCode
+Group By OfficeID
+
+----ThisYearSurplus
+	Insert @OffLinetbl (OfficeID,ThisYearSurplus)
+Select OfficeID,SUM(d.Credit-d.Debit) as ThisYearSurplus
+From AccTrxMaster as m Inner Join AccTrxDetail as d ON m.TrxMasterID=d.TrxMasterID Inner Join AccChart as a ON d.AccID=a.AccID
+Where d.IsActive=1 AND m.IsActive=1 AND m.IsPosted=1
+--AND m.TrxDate Between '2016-07-01' AND '2017-06-30'
+AND m.TrxDate Between @YrStartDate AND @Date
+--AND m.TrxDate <='2018-01-31'
+AND a.firstLevel In ('5','9')
+and m.OfficeID=@Office
+Group By OfficeID
+
+----CurMonthSurplus
+	Insert @OffLinetbl (OfficeID,CurMonthSurplus)
+Select OfficeID,SUM(d.Credit-d.Debit) as CurMonthSurplus
+From AccTrxMaster as m Inner Join AccTrxDetail as d ON m.TrxMasterID=d.TrxMasterID Inner Join AccChart as a ON d.AccID=a.AccID
+Where d.IsActive=1 AND m.IsActive=1 AND m.IsPosted=1
+--AND m.TrxDate Between '2016-07-01' AND '2017-06-30'
+AND m.TrxDate Between @FirstDate AND @Date
+and m.OfficeID=@Office
+--AND m.TrxDate <='2018-01-31'
+AND a.firstLevel In ('5','9')
+Group By OfficeID
+
+
+
+	FETCH NEXT FROM Insert_Branch
+	INTO @Office,@Org
+	END
+		
+	CLOSE Insert_Branch
+	DEALLOCATE Insert_Branch
+
+
+	
+----------Report View
+Select o.OrgID,org.OrganizationName,zo.ZoneCode,zo.ZoneName,ao.AreaCode,ao.AreaName,o.OfficeCode,o.OfficeName
+--,@Date ReportingDate
+,Case When @Date>pf.BusinessDate Then pf.BusinessDate Else @Date End as ReportingDate
+,SUM(isnull(Staff,0)) Staff
+,SUM(isnull(TotalSamity,0)) TotalSamity
+,SUM(isnull(NewMemberAdmission,0)) NewMemberAdmission
+,SUM(isnull(NewDropOut,0)) NewDropOut
+,SUM(isnull(TotalMember,0)) TotalMember
+
+,SUM(isnull(CumulativeRecoverable,0)) CumulativeRecoverable
+,SUM(isnull(CumulativeRecovery,0)) CumulativeRecovery
+,SUM(isnull(AdvanceLoanRealizedCL,0)) as AdvanceLoanRealizedCL
+
+,SUM(isnull(NewDueBorower,0)) NewDueBorower
+,SUM(isnull(NewDueAmount,0)) NewDueAmount
+
+,SUM(isnull(TotalBorrower,0)) TotalBorrower
+,SUM(isnull(LoanOutstanding,0)) LoanOutstanding
+,SUM(isnull(SCOutstanding,0)) SCOutstanding
+,SUM(isnull(TotalOutstanding,0)) TotalOutstanding
+
+,SUM(isnull(TotalDueBorrower,0)) TotalDueBorrower
+,SUM(isnull(CurrentDueAmount,0)) CurrentDueAmount
+,SUM(isnull(OverDueAmount,0)) OverDueAmount
+,SUM(isnull(TotalDueAmount,0)) TotalDueAmount
+
+,CAST((Case When SUM(isnull(CumulativeRecoverable,0))=0 Then 0 
+	Else (SUM(isnull(CumulativeRecovery,0))-SUM(isnull(AdvanceLoanRealizedCL,0)))/SUM(isnull(CumulativeRecoverable,0)) End)*100 AS NUMERIC(18,2)) as CRR
+
+,CAST((Case When SUM(isnull(CurrentRecoverable,0))=0 Then 0 ELSE
+SUM(isnull(CurrentRecovery,0))/SUM(isnull(CurrentRecoverable,0)) End)*100 AS NUMERIC(18,2))as OTR
+
+,CAST((Case When SUM(isnull(LoanOutstanding,0))=0 Then 0 ELSE
+SUM(isnull(PARAmountLoan,0))/SUM(isnull(LoanOutstanding,0)) End)*100 AS NUMERIC(18,2)) as PAR
+
+,SUM(isnull(SavingsBalance,0)) SavingsBalance
+,SUM(isnull(BankBalance,0)) BankBalance
+,SUM(isnull(CashInHand,0)) CashInHand
+,SUM(isnull(NewDisburseLoanee,0)) as NewDisburseLoanee,SUM(isnull(NewDisburseAmount,0)) as NewDisburseAmount
+,SUM(isnull(ThisYearSurplus,0)) as ThisYearSurplus,SUM(isnull(CurMonthSurplus,0)) as CurMonthSurplus
+,SUM(isnull(WriteOffBalance,0)) as WriteOffBalance
+
+,REPLACE(CONVERT(VARCHAR, @FirstDate,106),' ','-') FirstDate
+,REPLACE(CONVERT(VARCHAR, @Date,106),' ','-') DateTo
+
+From @OffLinetbl t
+Inner Join Office o ON t.OfficeID=o.OfficeID
+Left Join (Select OfficeID,Max(BusinessDate) BusinessDate from ProcessInfo Where ClosingStatus=1 Group By OfficeID) pf ON t.OfficeID=pf.OfficeID
+Inner Join (Select OfficeCode ZoneCode,OfficeName ZoneName From Office Where OfficeLevel=2) zo ON o.SecondLevel=zo.ZoneCode
+Inner Join (Select OfficeCode AreaCode,OfficeName AreaName From Office Where OfficeLevel=3) ao ON o.ThirdLevel=ao.AreaCode
+Inner Join Organization org ON o.OrgID=org.OrgID
+Group By o.OrgID,org.OrganizationName,zo.ZoneCode,zo.ZoneName,ao.AreaCode,ao.AreaName,o.OfficeCode,o.OfficeName,pf.BusinessDate
+Order By o.OfficeCode
+
+End

@@ -1,0 +1,321 @@
+USE [gBankerAUS]
+GO
+/****** Object:  StoredProcedure [dbo].[Proc_Weekly_At_a_glanceReport]    Script Date: 10/26/2022 3:31:40 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+-- =============================================
+-- Author:		<Kazi Shakhawat Hossain>
+-- Description:	EXEC Proc_Weekly_At_a_glanceReport '36,37'
+-- =============================================
+ALTER PROCEDURE [dbo].[Proc_Weekly_At_a_glanceReport] 
+	-- Add the parameters for the stored procedure here
+	@WeekList nvarchar(50)
+AS
+BEGIN
+
+SET NOCOUNT ON;
+
+	Declare 
+	@WeekNo VARCHAR(10),
+    @startDate DATETIME,
+	@endDate DATETIME
+
+	DECLARE @OffLinetbl TABLE (
+	OrgID INT
+   ,OrganizationName VARCHAR(50)
+   ,ZoneCode VARCHAR(50)
+   ,ZoneName VARCHAR(50)
+   ,AreaCode VARCHAR(50)
+   ,AreaName VARCHAR(50)
+   ,OfficeCode VARCHAR(50)
+   ,OfficeName VARCHAR(50)
+   ,ReportingDate DATETIME
+   ,Staff INT DEFAULT 0
+   ,TotalSamity INT DEFAULT 0
+   ,NewMemberAdmission INT DEFAULT 0
+   ,NewDropOut INT DEFAULT 0
+   ,TotalMember INT DEFAULT 0
+   ,CumulativeRecoverable NUMERIC(18, 2) DEFAULT 0
+   ,CumulativeRecovery NUMERIC(18, 2) DEFAULT 0
+   ,AdvanceLoanRealizedCL NUMERIC(18, 2) DEFAULT 0
+   ,NewDueAmount NUMERIC(18, 2) DEFAULT 0
+   ,NewDueBorower INT DEFAULT 0
+   ,NewDisburseLoanee INT DEFAULT 0
+   ,NewDisburseAmount NUMERIC(18, 2) DEFAULT 0
+   ,TotalBorrower INT DEFAULT 0
+   ,LoanOutstanding NUMERIC(18, 2) DEFAULT 0
+   ,SCOutstanding NUMERIC(18, 2) DEFAULT 0
+   ,TotalOutstanding NUMERIC(18, 2) DEFAULT 0
+   ,CurrentDueAmount NUMERIC(18, 2) DEFAULT 0
+   ,OverDueAmount NUMERIC(18, 2) DEFAULT 0
+   ,TotalDueAmount NUMERIC(18, 2) DEFAULT 0
+   ,TotalDueBorrower INT DEFAULT 0
+   ,CRR NUMERIC(18, 2) DEFAULT 0
+   ,OTR NUMERIC(18, 2) DEFAULT 0
+   ,PAR NUMERIC(18, 2) DEFAULT 0
+   ,SavingsBalance NUMERIC(18, 2) DEFAULT 0
+   ,BankBalance NUMERIC(18, 2) DEFAULT 0
+   ,CashInHand NUMERIC(18, 2) DEFAULT 0
+   ,ThisYearSurplus NUMERIC(18, 2) DEFAULT 0
+   ,CurMonthSurplus NUMERIC(18, 2) DEFAULT 0
+   ,WriteOffBalance NUMERIC(18, 2) DEFAULT 0
+   ,FirstDate DATETIME
+   ,DateTo DATETIME
+)
+
+DECLARE @WeeklyDataTable TABLE (
+    WeekNo VARCHAR(10),
+	OrgID INT
+   ,OrganizationName VARCHAR(50)
+   ,ZoneCode VARCHAR(50)
+   ,ZoneName VARCHAR(50)
+   ,AreaCode VARCHAR(50)
+   ,AreaName VARCHAR(50)
+   ,OfficeCode VARCHAR(50)
+   ,OfficeName VARCHAR(50)
+   ,ReportingDate DATETIME
+   ,Staff INT DEFAULT 0
+   ,TotalSamity INT DEFAULT 0
+   ,NewMemberAdmission INT DEFAULT 0
+   ,NewDropOut INT DEFAULT 0
+   ,TotalMember INT DEFAULT 0
+   ,CumulativeRecoverable NUMERIC(18, 2) DEFAULT 0
+   ,CumulativeRecovery NUMERIC(18, 2) DEFAULT 0
+   ,AdvanceLoanRealizedCL NUMERIC(18, 2) DEFAULT 0
+   ,NewDueAmount NUMERIC(18, 2) DEFAULT 0
+   ,NewDueBorower INT DEFAULT 0
+   ,NewDisburseLoanee INT DEFAULT 0
+   ,NewDisburseAmount NUMERIC(18, 2) DEFAULT 0
+   ,TotalBorrower INT DEFAULT 0
+   ,LoanOutstanding NUMERIC(18, 2) DEFAULT 0
+   ,SCOutstanding NUMERIC(18, 2) DEFAULT 0
+   ,TotalOutstanding NUMERIC(18, 2) DEFAULT 0
+   ,CurrentDueAmount NUMERIC(18, 2) DEFAULT 0
+   ,OverDueAmount NUMERIC(18, 2) DEFAULT 0
+   ,TotalDueAmount NUMERIC(18, 2) DEFAULT 0
+   ,TotalDueBorrower INT DEFAULT 0
+   ,CRR NUMERIC(18, 2) DEFAULT 0
+   ,OTR NUMERIC(18, 2) DEFAULT 0
+   ,PAR NUMERIC(18, 2) DEFAULT 0
+   ,SavingsBalance NUMERIC(18, 2) DEFAULT 0
+   ,BankBalance NUMERIC(18, 2) DEFAULT 0
+   ,CashInHand NUMERIC(18, 2) DEFAULT 0
+   ,ThisYearSurplus NUMERIC(18, 2) DEFAULT 0
+   ,CurMonthSurplus NUMERIC(18, 2) DEFAULT 0
+   ,WriteOffBalance NUMERIC(18, 2) DEFAULT 0
+   ,FirstDate DATETIME
+   ,DateTo DATETIME
+)
+
+SET @weekList = @WeekList
+
+CREATE TABLE #No_Of_Week (
+	WeekNo VARCHAR(10)
+)
+INSERT INTO #No_Of_Week
+	SELECT
+		value
+	FROM STRING_SPLIT(@weekList, ',')
+
+DECLARE WEEK_Cursor CURSOR
+LOCAL STATIC READ_ONLY FORWARD_ONLY FOR SELECT
+	WeekNo
+FROM #No_Of_Week
+
+OPEN WEEK_Cursor
+FETCH NEXT FROM WEEK_Cursor INTO @WeekNo
+WHILE @@FETCH_STATUS = 0
+BEGIN
+--Do something with data here
+Declare @OrgID INT,
+   @OrganizationName VARCHAR(50)
+   ,@ZoneCode VARCHAR(50)
+   ,@ZoneName VARCHAR(50)
+   ,@AreaCode VARCHAR(50)
+   ,@AreaName VARCHAR(50)
+   ,@OfficeCode VARCHAR(50)
+   ,@OfficeName VARCHAR(50)
+   ,@ReportingDate DATETIME
+   ,@Staff INT 
+   ,@TotalSamity INT 
+   ,@NewMemberAdmission INT  
+   ,@NewDropOut INT 
+   ,@TotalMember INT 
+   ,@CumulativeRecoverable NUMERIC(18, 2) 
+   ,@CumulativeRecovery NUMERIC(18, 2) 
+   ,@AdvanceLoanRealizedCL NUMERIC(18, 2) 
+   ,@NewDueAmount NUMERIC(18, 2) 
+   ,@NewDueBorower INT 
+   ,@NewDisburseLoanee INT 
+   ,@NewDisburseAmount NUMERIC(18, 2) 
+   ,@TotalBorrower INT 
+   ,@LoanOutstanding NUMERIC(18, 2) 
+   ,@SCOutstanding NUMERIC(18, 2) 
+   ,@TotalOutstanding NUMERIC(18, 2) 
+   ,@CurrentDueAmount NUMERIC(18, 2) 
+   ,@OverDueAmount NUMERIC(18, 2) 
+   ,@TotalDueAmount NUMERIC(18, 2) 
+   ,@TotalDueBorrower INT 
+   ,@CRR NUMERIC(18, 2) 
+   ,@OTR NUMERIC(18, 2) 
+   ,@PAR NUMERIC(18, 2) 
+   ,@SavingsBalance NUMERIC(18, 2) 
+   ,@BankBalance NUMERIC(18, 2) 
+   ,@CashInHand NUMERIC(18, 2) 
+   ,@ThisYearSurplus NUMERIC(18, 2) 
+   ,@CurMonthSurplus NUMERIC(18, 2) 
+   ,@WriteOffBalance NUMERIC(18, 2) 
+   ,@FirstDate DATETIME
+   ,@DateTo DATETIME
+
+SELECT
+	@startDate = StartDate
+FROM WeekNo
+WHERE WeekNoID = @WeekNo
+SELECT
+	@endDate = EndDate
+FROM WeekNo
+WHERE WeekNoID = @WeekNo
+
+INSERT INTO @OffLinetbl
+EXEC Proc_RPT_At_a_Glance_New @startDate,@endDate,150
+
+select 	
+    @OrgID=OrgID 
+   ,@OrganizationName=OrganizationName 
+   ,@ZoneCode =ZoneCode 
+   ,@ZoneName= ZoneName
+   ,@AreaCode= AreaCode
+   ,@AreaName = AreaName
+   ,@OfficeCode = OfficeCode
+   ,@OfficeName = OfficeCode
+   ,@ReportingDate = ReportingDate
+   ,@Staff= Staff
+   ,@TotalSamity= TotalSamity
+   ,@NewMemberAdmission= NewMemberAdmission
+   ,@NewDropOut= NewDropOut
+   ,@TotalMember =TotalMember
+   ,@CumulativeRecoverable= CumulativeRecoverable
+   ,@CumulativeRecovery= CumulativeRecovery
+   ,@AdvanceLoanRealizedCL= AdvanceLoanRealizedCL
+   ,@NewDueAmount =NewDueAmount
+   ,@NewDueBorower =NewDueBorower
+   ,@NewDisburseLoanee= NewDisburseLoanee
+   ,@NewDisburseAmount= NewDisburseAmount
+   ,@TotalBorrower =TotalBorrower
+   ,@LoanOutstanding= LoanOutstanding
+   ,@SCOutstanding= SCOutstanding
+   ,@TotalOutstanding= TotalOutstanding 
+   ,@CurrentDueAmount= CurrentDueAmount
+   ,@OverDueAmount= OverDueAmount
+   ,@TotalDueAmount =TotalDueAmount
+   ,@TotalDueBorrower =TotalDueBorrower
+   ,@CRR= CRR
+   ,@OTR= OTR
+   ,@PAR= PAR
+   ,@SavingsBalance =SavingsBalance
+   ,@BankBalance =BankBalance
+   ,@CashInHand =CashInHand
+   ,@ThisYearSurplus= ThisYearSurplus
+   ,@CurMonthSurplus= CurMonthSurplus
+   ,@WriteOffBalance= WriteOffBalance
+   ,@FirstDate =FirstDate
+   ,@DateTo = DateTo 
+   from @OffLinetbl
+
+INSERT INTO @WeeklyDataTable(WeekNo,
+	OrgID
+   ,OrganizationName 
+   ,ZoneCode 
+   ,ZoneName 
+   ,AreaCode 
+   ,AreaName 
+   ,OfficeCode 
+   ,OfficeName 
+   ,ReportingDate 
+   ,Staff 
+   ,TotalSamity 
+   ,NewMemberAdmission 
+   ,NewDropOut 
+   ,TotalMember 
+   ,CumulativeRecoverable 
+   ,CumulativeRecovery 
+   ,AdvanceLoanRealizedCL 
+   ,NewDueAmount 
+   ,NewDueBorower 
+   ,NewDisburseLoanee 
+   ,NewDisburseAmount 
+   ,TotalBorrower 
+   ,LoanOutstanding 
+   ,SCOutstanding 
+   ,TotalOutstanding 
+   ,CurrentDueAmount 
+   ,OverDueAmount 
+   ,TotalDueAmount 
+   ,TotalDueBorrower 
+   ,CRR 
+   ,OTR 
+   ,PAR 
+   ,SavingsBalance 
+   ,BankBalance 
+   ,CashInHand 
+   ,ThisYearSurplus 
+   ,CurMonthSurplus 
+   ,WriteOffBalance 
+   ,FirstDate 
+   ,DateTo )
+VALUES( @WeekNo,
+    @OrgID,
+   @OrganizationName
+   ,@ZoneCode
+   ,@ZoneName 
+   ,@AreaCode 
+   ,@AreaName 
+   ,@OfficeCode 
+   ,@OfficeName 
+   ,@ReportingDate 
+   ,@Staff 
+   ,@TotalSamity  
+   ,@NewMemberAdmission   
+   ,@NewDropOut 
+   ,@TotalMember 
+   ,@CumulativeRecoverable  
+   ,@CumulativeRecovery 
+   ,@AdvanceLoanRealizedCL 
+   ,@NewDueAmount  
+   ,@NewDueBorower  
+   ,@NewDisburseLoanee 
+   ,@NewDisburseAmount  
+   ,@TotalBorrower 
+   ,@LoanOutstanding  
+   ,@SCOutstanding  
+   ,@TotalOutstanding 
+   ,@CurrentDueAmount 
+   ,@OverDueAmount 
+   ,@TotalDueAmount 
+   ,@TotalDueBorrower  
+   ,@CRR 
+   ,@OTR  
+   ,@PAR 
+   ,@SavingsBalance  
+   ,@BankBalance 
+   ,@CashInHand 
+   ,@ThisYearSurplus  
+   ,@CurMonthSurplus 
+   ,@WriteOffBalance 
+   ,@FirstDate
+   ,@DateTo 
+)
+
+FETCH NEXT FROM WEEK_Cursor INTO @WeekNo
+END
+CLOSE WEEK_Cursor
+DEALLOCATE WEEK_Cursor
+
+SELECT
+	*
+FROM @WeeklyDataTable
+
+END

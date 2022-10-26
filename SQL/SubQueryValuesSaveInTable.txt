@@ -1,0 +1,233 @@
+USE [gBankerAUSTest]
+GO
+/****** Object:  StoredProcedure [dbo].[Proc_RPT_At_a_Glance]    Script Date: 10/10/2022 12:21:06 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+
+/*
+Select * From Office
+
+Exec Proc_RPT_At_a_Glance '2017-03-01','2022-10-31',150
+
+*/
+
+
+ALTER Procedure [dbo].[Proc_RPT_At_a_Glance] (@FirstDate SmallDateTime,@Date SmallDateTime,@Org int)
+
+
+As
+Begin
+
+Declare @Office int 
+
+
+	DECLARE Insert_Branch CURSOR FOR 
+	select OfficeID,OrgID from Office Where Officelevel=4 And Orgid=@Org
+	OPEN Insert_Branch
+	FETCH NEXT FROM Insert_Branch INTO @Office,@Org
+	WHILE @@FETCH_STATUS = 0
+	BEGIN
+
+/*
+	FETCH NEXT FROM Insert_Branch INTO @BranchIDSelect,@orgidSelect
+	WHILE @@FETCH_STATUS = 0
+	BEGIN
+		exec Proc_Get_LoanStatementHO @orgidSelect,@BranchIDSelect,@LastDate
+	FETCH NEXT FROM Insert_Branch
+	INTO @BranchIDSelect,@orgidSelect
+	END
+	CLOSE Insert_Branch
+	DEALLOCATE Insert_Branch
+	End	
+*/
+
+Declare @OffLinetbl Table (
+						 OfficeID Int
+						,ReportingDate SmallDateTime
+						,Staff int
+						,TotalSamity int
+						,NewMemberAdmission int
+						,NewDropOut int
+						,TotalMember int
+
+						,CumlativeRecoverable Numeric(18,2)
+						,CumlativeRecovery Numeric(18,2)
+						,CurrentPrincipalLoan Numeric(18,2)
+						,CurrentRecoverable Numeric(18,2)
+						,CurrentRecovery Numeric(18,2)
+						,OverdueRecovery Numeric(18,2)
+						,AdvanceRecovery Numeric(18,2)
+						,TotalRecovery Numeric(18,2)
+						,NewDueAmount Numeric(18,2)
+						,NewDueBorower int
+
+						,NewDisburse int
+						,NewDisburseAmount Numeric(18,2)
+						,NewFullyPaid int
+						,NewFullyPaidAmount Numeric(18,2)
+						,TotalBorrower int
+						,LoanOutstanding Numeric(18,2)
+						,SCOutstanding Numeric(18,2)
+						,TotalOutstanding Numeric(18,2)
+						,CurrentDueAmount Numeric(18,2)
+						,CurrentDueBorrower int
+						,OverDueAmount Numeric(18,2)
+						,OverDueBorrower int
+						,TotalDueAmount Numeric(18,2)
+						,TotalDueBorrower int
+						
+						,CRR Numeric(18,2)
+						,OTR Numeric(18,2)
+						,PAR Numeric(18,2)
+						,SavingsBalance Numeric(18,2)
+						,BankBalance Numeric(18,2)					 
+						,CashInHand Numeric(18,2)
+						)
+
+
+----TotalSamity
+	Insert @OffLinetbl (OfficeID,TotalSamity)
+		Select e.OfficeID,COUNT(distinct e.CenterID) TotalGroup from 
+		(
+			select distinct Member.OfficeID,Member.CenterID 
+			from Member 
+			Inner Join MemberCategory mc ON Member.MemberCategoryID=mc.MemberCategoryID
+			Where Member.IsActive=1 AND Member.OfficeID=@Office 
+			and Member.MemberStatus=1 --And Left(Member.Gender,1)='F' 
+			And Member.MemCategory='1' AND JoinDate <= @Date 
+			AND Left(mc.MemberCategoryCode,2) not in('71','72','73','74','75','76')
+			UNION ALL
+			select distinct Member.OfficeID,Member.CenterID 
+			from Member 
+			Inner Join MemberCategory mc ON Member.MemberCategoryID=mc.MemberCategoryID
+			Where Member.IsActive=1 AND Member.OfficeID=@Office 
+			And Member.MemCategory='1' 	--And Left(Member.Gender,1)='F'
+			AND JoinDate <=@Date AND MemberStatus=2 AND ReleaseDate >@Date
+			AND Left(mc.MemberCategoryCode,2) not in('71','72','73','74','75','76')
+
+		) as e
+		Group By e.OfficeID
+
+----NewMemberAdmission
+	Insert @OffLinetbl (OfficeID,NewMemberAdmission)
+		SELECT Member.OfficeID,  COUNT(Member.MemberID) AS ThisMonthAdmission
+			FROM  Member 
+			Inner JOIN MemberCategory as mc on Member.MemberCategoryID=mc.MemberCategoryID
+			Left Join (Select * From TransferHistory Where TransferDate between @FirstDate and @Date) as t ON Member.MemberID=t.TrMemberID ---Category/Member Transfer Data 2016-09-28
+			WHERE  Member.IsActive=1 AND Member.OfficeID=@Office 
+			and JoinDate between @FirstDate and @Date 
+			And MemCategory='1'
+			--AND MemberStatus<>'5' 
+			AND MemberStatus Not In ('5','0')
+			AND Left(mc.MemberCategoryCode,2) not in('71','72','73','74','75','76')
+			AND t.TrMemberID is null ---Category/Member Transfer Data 2016-09-28
+		GROUP BY Member.OfficeID
+
+----NewDropOut
+	Insert @OffLinetbl (OfficeID,NewDropOut)
+		SELECT Member.OfficeID, COUNT(Member.MemberID) AS ThisMonthWithdrawn
+			FROM  Member 
+			Inner JOIN MemberCategory as mc on Member.MemberCategoryID=mc.MemberCategoryID
+			Left Join (Select * From TransferHistory Where TransferDate between @FirstDate and @Date) as t ON Member.MemberID=t.MemberID ---Category/Member Transfer Data 2016-09-28
+			WHERE Member.IsActive=1 AND Member.OfficeID=@Office 
+			and ReleaseDate between @FirstDate and @Date 
+			And MemCategory='1'
+			--AND MemberStatus<>'5'
+			AND MemberStatus Not In ('5','0')
+			AND Left(mc.MemberCategoryCode,2) not in('71','72','73','74','75','76')
+			AND t.MemberID is null ---Category/Member Transfer Data 2016-09-28
+		GROUP BY Member.OfficeID
+
+----TotalMember
+	Insert @OffLinetbl (OfficeID,TotalMember)
+		SELECT o.OfficeID,  COUNT(o.MemberID) AS MaleMember
+			FROM(	--Active Member Uptodate
+				SELECT m.OfficeID, m.MemberCategoryID, m.MemberID 
+				FROM  Member m
+				Inner Join MemberCategory mc ON m.MemberCategoryID=mc.MemberCategoryID
+				WHERE m.IsActive=1 AND m.OfficeID=@Office
+				AND m.MemberStatus=1
+				AND m.JoinDate <= @Date --AND left(Gender,1)='M'
+				--Added On 26 Aug 2013 Ref note Date:12 Aug 2013	
+				And m.MemCategory='1'
+				AND Left(mc.MemberCategoryCode,2) not in('71','72','73','74','75','76')
+				UNION ALL
+				--Current Month Drop Member
+				SELECT m.OfficeID, m.MemberCategoryID, m.MemberID
+				FROM  Member m
+				Inner Join MemberCategory mc ON m.MemberCategoryID=mc.MemberCategoryID
+				WHERE m.IsActive=1 AND m.OfficeID=@Office 
+				AND m.JoinDate <=@Date AND m.MemberStatus=2 AND m.ReleaseDate >  @Date 
+				--AND left(m.Gender,1)='M'
+				And m.MemCategory='1'
+				AND Left(mc.MemberCategoryCode,2) not in('71','72','73','74','75','76')
+			  ) AS o 
+			GROUP BY o.OfficeID
+
+----SavingsBalance
+	Insert @OffLinetbl (OfficeID,SavingsBalance)
+		Select OfficeID,SUM(SavingsOutstanding) SavingsBalance
+			From(
+				Select sr.OfficeID, mc.MemberCategoryCode as CategoryID, ic.MainProductCode ItemCode,sr.ProductID
+				,((SUM(sr.Deposit) + SUM(sr.MonthlyInterest)) - SUM(sr.Withdrawal)) as SavingsOutstanding
+				from SavingTrx sr inner JOIN Member m on sr.OfficeID = m.OfficeID AND sr.CenterID = m.CenterID AND sr.MemberID = m.MemberID
+				inner join Product ic on sr.ProductID=ic.ProductID
+				inner join MemberCategory mc on sr.MemberCategoryID=mc.MemberCategoryID
+				where sr.TransactionDate<=@Date 
+				AND sr.OfficeID=@Office 
+				--and  left(m.Gender,1)  = 'F' AND sr.IsActive=1 --AND sr.OrgID=@Org
+				and Left(ic.ProductCode,2)not in(LEFT('20.00',2))
+				group by sr.OfficeID, mc.MemberCategoryCode, ic.MainProductCode, sr.ProductID
+			  ) s Group By OfficeID
+
+
+	FETCH NEXT FROM Insert_Branch
+	INTO @Office,@Org
+	END
+		
+	CLOSE Insert_Branch
+	DEALLOCATE Insert_Branch
+	
+----------Report View
+Select o.OrgID,org.OrganizationName,zo.ZoneCode,zo.ZoneName,ao.AreaCode,ao.AreaName,o.OfficeCode,o.OfficeName
+,@Date ReportingDate
+,SUM(isnull(Staff,0)) Staff
+,SUM(isnull(TotalSamity,0)) TotalSamity
+,SUM(isnull(NewMemberAdmission,0)) NewMemberAdmission
+,SUM(isnull(NewDropOut,0)) NewDropOut
+,SUM(isnull(TotalMember,0)) TotalMember
+
+,SUM(isnull(0,0)) CumulativeRecoverable
+,SUM(isnull(0,0)) CumulativeRecovery
+,SUM(isnull(0,0)) NewDueBorower
+,SUM(isnull(0,0)) NewDueAmount
+
+,SUM(isnull(0,0)) TotalBorrower
+,SUM(isnull(0,0)) LoanOutstanding
+
+,SUM(isnull(0,0)) TotalDueBorrower
+,SUM(isnull(0,0)) TotalDueAmount
+
+,SUM(isnull(0,0)) CRR
+,SUM(isnull(0,0)) OTR
+,SUM(isnull(0,0)) PAR
+,SUM(isnull(SavingsBalance,0)) SavingsBalance
+,SUM(isnull(OTR,0)) OTR
+,SUM(isnull(0,0)) BankBalance
+,SUM(isnull(0,0)) CashInHand
+,REPLACE(CONVERT(VARCHAR, @FirstDate,106),' ','-') FirstDate --@FirstDate FirstDate --REPLACE(CONVERT(VARCHAR, ar.TrxDate,106),' ','-')
+,REPLACE(CONVERT(VARCHAR, @Date,106),' ','-') DateTo --FirstDate@Date DateTo
+
+From @OffLinetbl t
+Inner Join Office o ON t.OfficeID=o.OfficeID
+Inner Join (Select OfficeCode ZoneCode,OfficeName ZoneName From Office Where OfficeLevel=2) zo ON o.SecondLevel=zo.ZoneCode
+Inner Join (Select OfficeCode AreaCode,OfficeName AreaName From Office Where OfficeLevel=3) ao ON o.ThirdLevel=ao.AreaCode
+Inner Join Organization org ON o.OrgID=org.OrgID
+Group By o.OrgID,org.OrganizationName,zo.ZoneCode,zo.ZoneName,ao.AreaCode,ao.AreaName,o.OfficeCode,o.OfficeName,ReportingDate
+Order By o.OfficeCode
+
+End
