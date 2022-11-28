@@ -1,0 +1,5 @@
+   In model
+
+
+[Column(TypeName = "numeric")]
+        public decimal Quantity { get; set; }

@@ -1,0 +1,466 @@
+USE [gBankerARCHES]
+GO
+/****** Object:  StoredProcedure [pksf].[PRA_LN_DIST_WISE_DISB_InsertData]    Script Date: 11/23/2022 1:52:26 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+-- =============================================
+-- Author:		<Kazi Shakhawat Hossain>
+-- Create date: <11 Nov 2022>
+-- Description:	<Upazilla Loan Data Population>
+-- EXEC [pksf].[PRA_LN_DIST_WISE_DISB_InsertData] '056','09/2022','1'
+-- =============================================
+ALTER PROCEDURE [pksf].[PRA_LN_DIST_WISE_DISB_InsertData]
+	@OrganizationCode Nvarchar(100)='056',
+	@FilteredDate nvarchar(100)='09/2022',
+	@Ins_User nvarchar(100)='Sh'
+AS
+BEGIN	
+
+	DECLARE @po_code nvarchar(20)
+	SET @po_code=(SELECT top 1 PKSF_PO_CODE FROM pksf.PO_INFO_MAPPING WHERE MFI_PO_CODE=@OrganizationCode)
+
+	DECLARE @LastDateOfTheMonth Date,@StartDateOfTheMonth Date,@YearOpeningDate date,  @MM nvarchar(5), @Year nvarchar(5),@MonthName nvarchar(5)
+	SET @MM= LEFT(@FilteredDate,2);
+	SET @Year= RIGHT(@FilteredDate,4);
+	SET @LastDateOfTheMonth= (SELECT [pksf].[fun_GetLastDteOfTheMonth]  (@MM,@Year))
+	SET @MonthName= (SELECT [pksf].[fn_GetMonthNameByNumber] (@MM))
+	SET @StartDateOfTheMonth ='01-'+@MonthName+'-'+@Year;
+
+
+	SET @YearOpeningDate =(SELECT TOP 1 DATEADD(DAY,1,(SELECT MAX(YearClosingDate) FROM ApplicationSettings)))
+
+	SET @YearOpeningDate =(SELECT 
+		CASE	WHEN @StartDateOfTheMonth<DATEADD(dd, 1, MAX(YearClosingDate)) THEN DATEADD(yy,-1,(DATEADD(dd, 1, MAX(YearClosingDate)))   )
+				ELSE DATEADD(dd, 1, MAX(YearClosingDate)) END
+		FROM ApplicationSettings);
+
+
+	BEGIN TRY
+
+	DELETE FROM  [pksf].[PRA_LN_DIST_WISE_DISB] WHERE po_code=@po_code and mnyr=@FilteredDate
+
+	INSERT INTO [pksf].[PRA_LN_DIST_WISE_DISB]
+	SELECT 
+	@po_code AS [po_code],
+	@FilteredDate AS [mnyr],
+	tmp.DistrictCode as dist_code,
+	tmp.UpozillaCode as thana_code,
+	ISNULL((SELECT plc.AssociatedLoanCode FROM pksf.POLoanCode plc WHERE  plc.LoanCode =tmp.LoanCode),'') [loan_code],
+	ISNULL(SUM(tmp.[cum_disb]),0) AS [cum_disb],
+	ISNULL(SUM(tmp.member),0) AS [member],
+	ISNULL(SUM(tmp.Borrower),0) AS borrower,
+	ISNULL(SUM(tmp.[loan_fy]),0) AS[loan_fy],
+	ISNULL(SUM(tmp.cum_borrower),0) AS[cum_borr],
+	@Ins_User AS [ins_user],
+	GETDATE() AS [ins_date],
+	NULL [upd_user],
+	NULL [upd_date],
+	'1' AS [posting_flag],
+	GETDATE() AS [status_date]
+	FROM
+	(
+		--06: cumulative disbursement
+		SELECT
+		fndQty.DistrictCode
+	   ,fndQty.UpozillaCode
+	 --  ,pt.MainProductCode
+	      ,ppm.LoanCode
+	   ,0 AS [member]
+	  ,0 AS Borrower
+	   ,SUM(ISNULL(fndQty.CumDisburse, 0)) AS [cum_disb]
+	   ,0 AS loan_fy
+	   ,0 AS cum_borrower
+	FROM (SELECT
+
+			ct.DistrictCode
+		   ,ct.UpozillaCode
+		   ,ls.ProductID
+			--	pt.MainProductCode	
+		   ,SUM(ISNULL(ls.PrincipalLoan, 0)) AS CumDisburse
+		FROM LoanTrx ls
+		INNER JOIN (SELECT DISTINCT
+				ProductID
+			   ,ProductCode
+			   ,ProductType
+			FROM Product) pt
+			ON pt.ProductID = ls.ProductID
+		--INNER JOIN (select MainProductCode,ProductID,ProductCode,ProductType from dbo.Product WHERE ProductCode IN(select MainProductCode from dbo.Product))pt ON pt.ProductID=ls.ProductID	
+		INNER JOIN pksf.POProductMapping ppm
+			ON ppm.ProductCode = pt.ProductCode
+		--INNER JOIN (SELECT OfficeID,UnionID FROM Office ) uno ON uno.OfficeID=ls.OfficeID
+		INNER JOIN (SELECT
+				CenterID
+			   ,UpozillaCode
+			   ,DistrictCode
+			FROM [dbo].[Center]) ct
+			ON ct.CenterID = ls.CenterId
+		--INNER JOIN (SELECT UnionID,UpozillaID FROM [Union] ) un ON un.UnionID=uno.UnionID
+		LEFT JOIN (SELECT
+				UpozillaID
+			   ,UpozillaCode
+			   ,DistrictID
+			FROM Upozilla) up
+			ON up.UpozillaCode = ct.UpozillaCode
+		LEFT JOIN (SELECT
+				DistrictID
+			   ,DistrictCode
+			FROM dbo.District) dis
+			ON dis.DistrictCode = ct.DistrictCode
+		INNER JOIN ( SELECT ThanaCode,DistrictCode,OlrsDistrictCode,OlrsThanaCode FROM pksf.DistrictThanaMapping ) AS  odtm ON odtm.ThanaCode=up.UpozillaCode and odtm.DistrictCode=dis.DistrictCode
+		INNER JOIN ( SELECT district_code,district_name FROM pksf.DISTRICT ) olrsdis ON olrsdis.district_code=odtm.OlrsDistrictCode
+		INNER JOIN ( SELECT thana_code,thana_name FROM pksf.THANA ) oltha ON oltha.thana_code=odtm.OlrsThanaCode			
+		WHERE ls.IsActive = 1
+		AND DATEADD(dd, DATEDIFF(dd, 0, ls.InstallmentDate), 0) <= @LastDateOfTheMonth
+		AND pt.ProductType = 1
+		AND LEFT(pt.ProductCode, 1) <> '7'
+		GROUP BY ct.DistrictCode
+				,ct.UpozillaCode
+				,ls.ProductID
+
+		UNION ALL
+
+		SELECT
+			ct.DistrictCode
+		   ,ct.UpozillaCode
+		   ,cm.ProductID
+			--ppm.LoanCode,			
+		   ,SUM(UptoDisbursement) AS CumDisburse
+		FROM CumMIS cm
+		INNER JOIN (SELECT DISTINCT
+				ProductID
+			   ,ProductCode
+			   ,ProductType
+			FROM Product) pt
+			ON pt.ProductID = cm.ProductID
+		--INNER JOIN (select MainProductCode,ProductID,ProductCode,ProductType from dbo.Product WHERE ProductCode IN(select MainProductCode from dbo.Product))pt ON pt.ProductID=cm.ProductID	
+		 INNER JOIN pksf.POProductMapping ppm ON ppm.ProductCode=pt.ProductCode
+		--INNER JOIN (SELECT OfficeID,UnionID FROM Office ) uno ON uno.OfficeID=cm.OfficeID
+		INNER JOIN (SELECT
+				CenterID
+			   ,UpozillaCode
+			   ,DistrictCode
+			FROM [dbo].[Center]) ct
+			ON ct.CenterID = cm.CenterId
+		--INNER JOIN (SELECT UnionID,UpozillaID FROM [Union] ) un ON un.UnionID=uno.UnionID
+		--INNER JOIN (SELECT UpozillaID,UpozillaCode,DistrictID FROM Upozilla ) up ON up.UpozillaID=un.UpozillaID
+		INNER JOIN (SELECT
+				UpozillaID
+			   ,UpozillaCode
+			   ,DistrictID
+			FROM Upozilla) up
+			ON up.UpozillaCode = ct.UpozillaCode
+		INNER JOIN (SELECT
+				DistrictID
+			   ,DistrictCode
+			FROM dbo.District) dis
+			ON dis.DistrictCode = ct.DistrictCode
+		INNER JOIN ( SELECT ThanaCode,DistrictCode,OlrsDistrictCode,OlrsThanaCode FROM pksf.DistrictThanaMapping ) AS  odtm ON odtm.ThanaCode=up.UpozillaCode and odtm.DistrictCode=dis.DistrictCode
+		INNER JOIN ( SELECT district_code,district_name FROM pksf.DISTRICT ) olrsdis ON olrsdis.district_code=odtm.OlrsDistrictCode
+		INNER JOIN ( SELECT thana_code,thana_name FROM pksf.THANA ) oltha ON oltha.thana_code=odtm.OlrsThanaCode
+
+		WHERE pt.ProductType = 1
+		AND LEFT(pt.ProductCode, 1) <> '7'
+		GROUP BY ct.DistrictCode
+				,ct.UpozillaCode
+				,cm.ProductID) AS fndQty
+	LEFT JOIN dbo.Product pt
+		ON pt.ProductID = fndQty.ProductID
+	INNER JOIN pksf.POProductMapping ppm ON ppm.ProductCode=pt.ProductCode
+	GROUP BY fndQty.DistrictCode
+			,fndQty.UpozillaCode
+			,fndQty.CumDisburse
+			,ppm.LoanCode
+	--		,pt.MainProductCode
+			   		
+		UNION ALL
+
+		--07 : no of member
+		SELECT
+		ct.DistrictCode
+	   ,ct.UpozillaCode
+	   --,pt.MainProductCode
+	   	,PPM.loancode
+	   ,SUM(ISNULL(gm.Member, 0)) AS [member]
+	   ,0 AS Borrower
+	   ,0 AS [cum_disb]
+	   ,0 AS loan_fy
+	   ,0 AS cum_borrower
+	FROM (SELECT
+			o.OfficeID
+		   ,o.MemberCategoryID CategoryID
+		   ,o.CenterID
+		   ,COUNT(Distinct o.MemberCode) AS Member
+		FROM (
+
+			--Active Member Uptodate
+			SELECT
+				OfficeID
+			   ,MemberCategoryID
+			  , MemberCode
+			   ,CenterID
+			FROM Member
+			WHERE OrgID = 112
+			AND IsActive = 1 --AND OfficeID=@lcl_Officeid 
+			AND MemberStatus = 1
+			AND JoinDate <= @LastDateOfTheMonth
+			AND LEFT(Gender, 1) IN ('F', 'M')
+			AND MemCategory = '1'
+
+			UNION ALL
+			--Current Month Drop Member
+			SELECT
+				OfficeID
+			   ,MemberCategoryID
+			   --,MemberID
+			   ,MemberCode
+			   ,CenterID
+			FROM Member
+			WHERE OrgID = 112
+			AND IsActive = 1
+			AND JoinDate <= @LastDateOfTheMonth
+			AND MemberStatus = 2
+			AND ReleaseDate > @LastDateOfTheMonth
+			AND LEFT(Gender, 1) IN ('F', 'M')
+			AND MemCategory = '1') AS o
+		GROUP BY o.OfficeID
+				,o.MemberCategoryID
+				,o.CenterID) gm
+	INNER JOIN MemberCategory mc
+		ON mc.MemberCategoryID = CAST(gm.CategoryID AS INT)
+	INNER JOIN dbo.Center ct
+		ON ct.CenterID = gm.CenterID
+	INNER JOIN (SELECT DISTINCT
+			MainProductCode
+		FROM Product) pt
+		ON pt.MainProductCode = mc.MemberCategoryCode
+	INNER JOIN (
+	
+		select left(ppm.productCode,2)+'.'+cast('00' as varchar(2)) ProductCode,max(loanCode) loanCode from 	pksf.POProductMapping ppm
+		group by left(ppm.productCode,2)
+	) ppm ON ppm.ProductCode=pt.MainProductCode
+	--INNER JOIN (select distinct LEFT(ProductCode,2) ProductCode, LoanCode from  pksf.POProductMapping) ppm ON LEFT(ppm.ProductCode,2)+'.00'=pt.MainProductCode
+	--INNER JOIN (SELECT OfficeID,UnionID FROM Office ) uno ON uno.OfficeID=gm.OfficeID
+	--INNER JOIN (SELECT UnionID,UpozillaID, FROM [Union] ) un ON un.UnionID=uno.UnionID
+	LEFT JOIN (SELECT
+			UpozillaID
+		   ,UpozillaCode
+		   ,DistrictID
+		FROM Upozilla) up
+		ON up.UpozillaCode = ct.UpozillaCode
+	LEFT JOIN (SELECT
+			DistrictID
+		   ,DistrictCode
+		FROM dbo.District) dis
+		ON dis.DistrictCode = ct.DistrictCode
+	INNER JOIN pksf.DistrictThanaMapping odtm ON odtm.ThanaCode=up.UpozillaCode
+	INNER JOIN pksf.DISTRICT olrsdis ON olrsdis.district_code=odtm.OlrsDistrictCode
+	INNER JOIN pksf.THANA oltha ON oltha.thana_code=odtm.OlrsThanaCode
+	--WHERE DATEADD(dd, DATEDIFF(dd, 0, gm.ProcessDate), 0)  BETWEEN '1 Sep 2022' AND '30 Sep 2022'  
+	--and gm.CategoryID<>'oo'
+	GROUP BY ct.DistrictCode
+			,ct.UpozillaCode
+			,PPM.loancode
+
+		UNION ALL
+
+		--08 : Borrower
+		 SELECT  
+		     ct.DistrictCode,
+	         ct.UpozillaCode,
+		     --pt.MainProductCode
+			 ppm.LoanCode
+			 ,0 AS [member]
+	    	 ,COUNT( distinct em.MemberID) AS Borrower 
+              ,0 AS [cum_disb]
+	         ,0 AS loan_fy
+	         ,0 AS cum_borrower
+	 		
+		FROM(	SELECT lr.LoanSummaryID, lr.OfficeID, lr.CenterID, lr.ProductID, lr.MemberID, lr.LoanTerm, pc.ProductCode,
+		        lr.MemberCategoryID
+				,(sum(lr.PrincipalLoan) - sum(lr.LoanPaid)) as em_LoanAmount,
+				(sum(lr.IntCharge) - sum(lr.IntPaid)) as em_ChargeAmount
+				FROM LoanTrx as lr 
+				INNER JOIN LoanSummary as ul ON  lr.LoanSummaryID=ul.LoanSummaryID
+				inner join Product pc on lr.ProductID=pc.ProductID
+				WHERE  lr.InstallmentDate <= @LastDateOfTheMonth And ul.IsActive=1
+				and pc.ProductType=1
+				GROUP BY lr.LoanSummaryID, lr.OfficeID, lr.CenterID, lr.ProductID, lr.MemberID, lr.LoanTerm,pc.ProductCode,lr.MemberCategoryID
+				Having (sum(lr.PrincipalLoan) + sum(lr.IntCharge)) - (sum(lr.LoanPaid) + sum(lr.IntPaid))>=0.5
+				
+				) em
+		INNER JOIN MemberCategory mc ON mc.MemberCategoryID=cast(em.MemberCategoryID as INT)
+		INNER JOIN dbo.Center ct ON ct.CenterID=em.CenterID
+		INNER JOIN (SELECT DISTINCT MainProductCode ,ProductCode FROM Product ) pt on pt.MainProductCode=mc.MemberCategoryCode
+		LEFT JOIN (SELECT UpozillaID,UpozillaCode,DistrictID FROM Upozilla ) up ON up.UpozillaCode=ct.UpozillaCode
+		LEFT JOIN (SELECT DistrictID,DistrictCode FROM dbo.District ) dis ON dis.DistrictCode=ct.DistrictCode
+		INNER JOIN pksf.POProductMapping ppm ON ppm.ProductCode=pt.ProductCode
+		INNER JOIN ( SELECT ThanaCode,DistrictCode,OlrsDistrictCode,OlrsThanaCode FROM pksf.DistrictThanaMapping ) AS  odtm ON odtm.ThanaCode=up.UpozillaCode and odtm.DistrictCode=dis.DistrictCode
+		INNER JOIN ( SELECT district_code,district_name FROM pksf.DISTRICT ) olrsdis ON olrsdis.district_code=odtm.OlrsDistrictCode
+		INNER JOIN ( SELECT thana_code,thana_name FROM pksf.THANA ) oltha ON oltha.thana_code=odtm.OlrsThanaCode
+		GROUP BY ct.DistrictCode,
+	         ct.UpozillaCode,
+		     pt.MainProductCode,
+			 ppm.LoanCode
+
+		UNION ALL
+
+		--09 : Loan disbursement of this financial year
+		SELECT
+		ct.DistrictCode
+	   ,ct.UpozillaCode
+	   --,pt.MainProductCode
+	   ,ppm.loancode
+	   ,0 AS [member]
+	   ,0 AS Borrower
+	   ,0 AS [cum_disb]
+	   ,
+	   SUM(ls.PrincipalLoan) AS [loan_fy]
+	   ,0 AS cum_borrower
+
+
+	FROM LoanSummary ls
+	INNER JOIN (SELECT DISTINCT ProductID,ProductCode,MainProductCode FROM Product) pt ON pt.ProductID=ls.ProductID
+	INNER JOIN pksf.POProductMapping ppm ON ppm.ProductCode=pt.ProductCode
+	--INNER JOIN (SELECT OfficeID,UnionID FROM Office ) uno ON uno.OfficeID=ls.OfficeID
+	--INNER JOIN (SELECT UnionID,UpozillaID FROM [Union] ) un ON un.UnionID=uno.UnionID
+	--INNER JOIN (SELECT UpozillaID,UpozillaCode,DistrictID FROM Upozilla ) up ON up.UpozillaID=un.UpozillaID
+	--INNER JOIN (SELECT DistrictID,DistrictCode FROM dbo.District ) dis ON dis.DistrictID=up.DistrictID
+	INNER JOIN (SELECT
+			CenterID
+		   ,UpozillaCode
+		   ,DistrictCode
+		FROM [dbo].[Center]) ct
+		ON ct.CenterID = ls.CenterId
+	LEFT JOIN (SELECT
+			UpozillaID
+		   ,UpozillaCode
+		   ,DistrictID
+		FROM Upozilla) up
+		ON up.UpozillaCode = ct.UpozillaCode
+	LEFT JOIN (SELECT
+			DistrictID
+		   ,DistrictCode
+		FROM dbo.District) dis
+		ON dis.DistrictCode = ct.DistrictCode
+	INNER JOIN pksf.DistrictThanaMapping odtm
+		ON odtm.ThanaCode = up.UpozillaCode
+	INNER JOIN pksf.DISTRICT olrsdis
+		ON olrsdis.district_code = odtm.OlrsDistrictCode
+	INNER JOIN pksf.THANA oltha
+		ON oltha.thana_code = odtm.OlrsThanaCode
+	WHERE ls.DisburseDate IS NOT NULL
+	AND ls.IsActive = 1
+	AND LEFT(pt.ProductCode, 1) <> '7'
+	AND (DisburseDate BETWEEN @YearOpeningDate AND @LastDateOfTheMonth)
+	GROUP BY ct.DistrictCode
+			,ct.UpozillaCode
+			,ppm.loancode
+
+
+		UNION ALL
+		-- 10 : Cummulative borrower
+		SELECT
+		fndQty.DistrictCode
+	   ,fndQty.UpozillaCode
+	   ,fndQty.LoanCode
+	   ,0 AS [member]
+	   ,0 AS Borrower
+	   ,0 AS [cum_disb]
+	   ,0 AS [loan_fy]
+	   ,SUM(ISNULL(fndQty.Closing_Loanee, 0)) AS [cum_borrower]
+	FROM (
+	
+	SELECT 
+		--ds.LoanSummaryID, ds.OfficeID, ds.CenterID, ds.ProductID, ds.MemberID, ds.LoanTerm,
+		     ct.DistrictCode,
+			 ct.UpozillaCode,
+		    --,ds.MainProductCode,
+			  ppm.LoanCode,
+			count(ds.MemberID) as Closing_Loanee
+		FROM(	--SELECT dh.LoanSummaryID, dh.OfficeID, dh.CenterID, dh.ProductID, dh.MemberID, dh.LoanTerm,pc.ProductCode
+				SELECT Max(dh.LoanSummaryID) LoanSummaryID,dh.OfficeID, Max(m.CenterID) CenterID,dh.ProductID, Max(m.MemberID) MemberID,m.MemberCode, dh.LoanTerm,
+				pc.MainProductCode,pc.ProductCode
+		
+				 --sum(lr.PrincipalLoan) as dis_Amount
+				FROM LoanSummary as dh 
+				inner join Product pc on dh.ProductID=pc.ProductID
+				Inner Join Member m ON dh.MemberID=m.MemberID
+				WHERE  dh.DisburseDate <= @LastDateOfTheMonth And dh.DisburseDate is not null and dh.IsActive=1 AND dh.Posted=1
+				and pc.ProductType=1
+				GROUP BY dh.OfficeID, dh.ProductID, m.MemberCode, dh.LoanTerm, pc.MainProductCode, pc.ProductCode--Without Transfered Member Record
+				Having  dh.LoanTerm=1
+				) AS ds
+			
+		INNER JOIN dbo.Center ct ON ct.CenterID=ds.CenterID
+	   Left JOIN (SELECT UpozillaID,UpozillaCode,DistrictID FROM Upozilla ) up ON up.UpozillaCode=ct.UpozillaCode
+	   Left JOIN (SELECT DistrictID,DistrictCode FROM dbo.District ) dis ON dis.DistrictCode=ct.DistrictCode
+	   INNER JOIN pksf.POProductMapping ppm ON ppm.ProductCode=ds.ProductCode
+		INNER JOIN ( SELECT ThanaCode,DistrictCode,OlrsDistrictCode,OlrsThanaCode FROM pksf.DistrictThanaMapping ) AS  odtm ON odtm.ThanaCode=up.UpozillaCode and odtm.DistrictCode=dis.DistrictCode
+		INNER JOIN ( SELECT district_code,district_name FROM pksf.DISTRICT ) olrsdis ON olrsdis.district_code=odtm.OlrsDistrictCode
+		INNER JOIN ( SELECT thana_code,thana_name FROM pksf.THANA ) oltha ON oltha.thana_code=odtm.OlrsThanaCode
+		GROUP BY ct.UpozillaCode,ct.DistrictCode,ppm.LoanCode
+
+		UNION ALL
+
+		SELECT
+			ct.DistrictCode
+		   ,ct.UpozillaCode
+		   --,pt.MainProductCode
+		   ,ppm.LoanCode
+		   ,SUM(cm.NoOfLoanee) AS Closing_Loanee
+		FROM dbo.CumMis cm
+		INNER JOIN dbo.Center ct
+			ON ct.CenterID = cm.CenterID
+			
+		INNER JOIN (SELECT DISTINCT
+				ProductID
+			   ,ProductCode
+			   ,ProductType
+			   ,MainProductCode
+			FROM Product) pt
+			ON pt.ProductID = cm.ProductID
+		INNER JOIN pksf.POProductMapping ppm ON ppm.ProductCode=pt.ProductCode
+		INNER JOIN (SELECT
+				UpozillaID
+			   ,UpozillaCode
+			   ,DistrictID
+			FROM Upozilla) up
+			ON up.UpozillaCode = ct.UpozillaCode
+		INNER JOIN (SELECT
+				DistrictID
+			   ,DistrictCode
+			FROM dbo.District) dis
+			ON dis.DistrictCode = ct.DistrictCode
+		INNER JOIN ( SELECT ThanaCode,DistrictCode,OlrsDistrictCode,OlrsThanaCode FROM pksf.DistrictThanaMapping ) AS  odtm ON odtm.ThanaCode=up.UpozillaCode and odtm.DistrictCode=dis.DistrictCode
+		INNER JOIN ( SELECT district_code,district_name FROM pksf.DISTRICT ) olrsdis ON olrsdis.district_code=odtm.OlrsDistrictCode
+		INNER JOIN ( SELECT thana_code,thana_name FROM pksf.THANA ) oltha ON oltha.thana_code=odtm.OlrsThanaCode
+
+		WHERE pt.ProductType = 1
+		AND LEFT(pt.ProductCode, 1) <> '7'
+		GROUP BY ct.DistrictCode
+				,ct.UpozillaCode
+				,ppm.LoanCode) fndQty
+	GROUP BY fndQty.DistrictCode
+			,fndQty.UpozillaCode
+			,fndQty.LoanCode 
+	)tmp
+--where  tmp.DistrictCode!='0'  AND tmp.UpozillaCode !='0'
+
+GROUP BY tmp.DistrictCode
+		,tmp.UpozillaCode
+		,tmp.LoanCode
+	END TRY
+	BEGIN CATCH
+        INSERT INTO pksf.OlrsErrorLogger
+		SELECT 'PRA_LN_DIST_WISE_DISB_InsertData, Processed By:'+ @Ins_User+ ' On:'+ CAST(GETDATE() AS NVARCHAR(50)), ERROR_MESSAGE()
+    END CATCH 
+
+END
+
+
+
+
+
+

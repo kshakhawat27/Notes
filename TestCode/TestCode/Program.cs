@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Data;
 
 using System.Reflection;
+using System.Text;
 
 namespace TestCode
 {
@@ -86,6 +87,20 @@ namespace TestCode
             }
             return 0;
         } 
+
+        public static int ReadBinary()
+        {
+            var bytes = Encoding.UTF8.GetBytes("test");
+
+            var t= Encoding.UTF8.GetString(bytes);
+        
+            //cmdb.Parameters.AddWithValue("@text", Encoding.UTF8.GetBytes(textreview.Text));
+
+           //var tst = Encoding.GetString((byte[])bytes);
+
+            return 0;
+
+        }
       
         static void Main(string[] args)
         {
@@ -115,26 +130,27 @@ namespace TestCode
             //model.num = 2;
             //model.Code = "0032";
             //CRUD.Savevalue(model);
-            ReaminQty();
-            BreakLoop();
-            var test = new List<dynamic>();
+            //ReaminQty();
+            //BreakLoop();
+            //var test = new List<dynamic>();
 
-            List <string[]> list= new List<string[]>();
+            //List <string[]> list= new List<string[]>();
 
-            var test1 = new List<TestModel>()
-            {
-                new TestModel{ id=15}
-            };
+            //var test1 = new List<TestModel>()
+            //{
+            //    new TestModel{ id=15}
+            //};
 
-            DateTime localDate = DateTime.Now;
-           
-            var t= ToDataTable(test1);
+            //DateTime localDate = DateTime.Now;
 
-            int Timestamp = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
-       
-            Console.WriteLine(localDate.ToString());
-            Console.WriteLine(Timestamp);
-            CheckException();
+            //var t= ToDataTable(test1);
+
+            //int Timestamp = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
+
+            //Console.WriteLine(localDate.ToString());
+            //Console.WriteLine(Timestamp);
+            //CheckException();
+            ReadBinary();
         }
 
         public static DataTable ToDataTable<T>(this IList<T> list)

@@ -1,0 +1,1149 @@
+USE [gBankerARCHESMIS]
+GO
+/****** Object:  StoredProcedure [pksf].[InsertLoanCodeXProductMappingData_IND_CODE_058]    Script Date: 11/28/2022 11:23:10 AM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+-- =============================================    
+-- Author:  <KHALID>    
+-- Create date: <25 April, 2021>    
+-- Description: <Description,,>    
+-- =============================================    
+-- EXEC [pksf].[InsertLoanCodeXProductMappingData_IND_CODE_058] '10/2021', '270'  
+ALTER PROCEDURE [pksf].[InsertLoanCodeXProductMappingData_IND_CODE_058]    
+	@FilteredDate nvarchar(100)='02/2021',  
+	@OrganizationCode nvarchar(100)='096'      
+AS    
+BEGIN     
+	SET NOCOUNT ON;    
+  
+	DELETE FROM PRA_MN_RPT_TAB_XL_PD where ind_code IN ('058' )   and mnyr= @FilteredDate  and po_code= @OrganizationCode  
+   
+	DECLARE @LastDateOfTheMonth Date,@StartDateOfTheMonth Date, @MM nvarchar(5), @Year nvarchar(5),@MonthName nvarchar(5),@Designation NVARCHAR(50)
+	SET @MM= LEFT(@FilteredDate,2);
+	SET @Year= RIGHT(@FilteredDate,4);
+	SET @LastDateOfTheMonth= (SELECT [pksf].[fun_GetLastDteOfTheMonth]  (@MM,@Year))
+	SET @MonthName= (SELECT [pksf].[fn_GetMonthNameByNumber] (@MM))
+	SET @StartDateOfTheMonth ='01-'+@MonthName+'-'+@Year;	
+
+	--SET @Designation='FHV'
+	--IF(@OrganizationCode='270' /*PSS*/)	SET @Designation='FW'
+
+	DROP TABLE IF EXISTS #CTE_IND_CODE_058
+
+	CREATE TABLE #CTE_IND_CODE_058
+	(
+		LoanCode NVARCHAR(20),
+		EmployeeId INT
+	)
+
+	INSERT INTO #CTE_IND_CODE_058 
+	--SELECT 
+	--ppm.LoanCode,
+	--c.EmployeeId
+	--from Center c
+	--INNER JOIN Employee e on c.OfficeID = e.OfficeID and c.EmployeeId = e.EmployeeID
+	--INNER JOIN (
+	--SELECT DISTINCT CenterID,ProductID FROM LoanSummary WHERE IsActive=1 and LoanStatus=1
+	--) AS ls ON ls.CenterID = c.CenterID
+	--INNER JOIN Product as p ON p.ProductID = ls.ProductID
+	--INNER JOIN pksf.POProductMapping as ppm ON ppm.ProductCode = P.ProductCode
+	--where c.Centerstatus = 1 and e.employeestatus = 1 
+	--and c.OfficeID not in (Select OfficeID from Office where left(Officecode,3)='999')		
+	----AND e.Designation = @Designation 
+	
+	SELECT 
+	ppm.LoanCode,
+	e.EmployeeId
+	from Employee e 
+	LEFT JOIN Center c on c.OfficeID = e.OfficeID and c.EmployeeId = e.EmployeeID
+	LEFT JOIN (
+	SELECT DISTINCT CenterID,ProductID FROM LoanSummary WHERE IsActive=1 
+	and LoanStatus=1
+	) AS ls ON ls.CenterID = c.CenterID
+	INNER JOIN Office o on o.OfficeID = e.OfficeID
+	INNER join Designation d on d.DesignationID=e.DesignationID 
+	INNER JOIN Product as p ON p.ProductID = ls.ProductID
+	INNER JOIN pksf.POProductMapping as ppm ON ppm.ProductCode = P.ProductCode
+	where c.Centerstatus = 1 and e.employeestatus = 1 
+	and c.OfficeID not in (Select OfficeID from Office where left(Officecode,3)='999')		
+	--AND e.Designation = @Designation  
+	and d.DesignationTypeID=1   --(New)
+
+	INSERT INTO PRA_MN_RPT_TAB_XL_PD  
+	SELECT   
+	@OrganizationCode AS PO_CODE  
+	,@FilteredDate AS MNYR ,
+	IND_Code, M_F_FLAG,  
+	SUM(ISNULL(loan_00,0)) AS loan_00,  
+	SUM(ISNULL(loan_01,0)) AS loan_01,  
+	SUM(ISNULL(loan_02, 0)) AS loan_02,  
+	SUM(ISNULL(loan_03,0)) AS loan_03,  
+	SUM(ISNULL(loan_04,0)) AS loan_04,  
+	SUM(ISNULL(loan_05,0)) AS loan_05,  
+	SUM(ISNULL(loan_06,0)) AS loan_06,  
+	SUM(ISNULL(loan_07,0)) AS loan_07,  
+	SUM(ISNULL(loan_08,0)) AS loan_08,  
+	SUM(ISNULL(loan_09,0)) AS loan_09,  
+	SUM(ISNULL(loan_10,0)) AS loan_10,  
+	SUM(ISNULL(loan_11,0)) AS loan_11,  
+	SUM(ISNULL(loan_12,0)) AS loan_12,  
+	SUM(ISNULL(loan_13,0)) AS loan_13,  
+	SUM(ISNULL(loan_14,0)) AS loan_14,  
+	SUM(ISNULL(loan_15,0)) AS loan_15,  
+	SUM(ISNULL(loan_16,0)) AS loan_16,  
+	SUM(ISNULL(loan_17,0)) AS loan_17,  
+	SUM(ISNULL(loan_18,0)) AS loan_18,  
+	SUM(ISNULL(loan_19,0)) AS loan_19,  
+	SUM(ISNULL(loan_20,0)) AS loan_20,  
+	SUM(ISNULL(loan_21,0)) AS loan_21,  
+	SUM(ISNULL(loan_22,0)) AS loan_22,  
+	SUM(ISNULL(loan_23,0)) AS loan_23,  
+	SUM(ISNULL(loan_24,0)) AS loan_24,  
+	SUM(ISNULL(loan_25,0)) AS loan_25,  
+	SUM(ISNULL(loan_26,0)) AS loan_26,  
+	SUM(ISNULL(loan_27,0)) AS loan_27,  
+	SUM(ISNULL(loan_28,0)) AS loan_28,  
+	SUM(ISNULL(loan_29,0)) AS loan_29,  
+	SUM(ISNULL(loan_30,0)) AS loan_30,  
+	SUM(ISNULL(loan_31,0)) AS loan_31,  
+	SUM(ISNULL(loan_32,0)) AS loan_32,  
+	SUM(ISNULL(loan_33,0)) AS loan_33,  
+	SUM(ISNULL(loan_34,0)) AS loan_34,  
+	SUM(ISNULL(loan_35,0)) AS loan_35,  
+	SUM(ISNULL(loan_36,0)) AS loan_36,  
+	SUM(ISNULL(loan_37,0)) AS loan_37,  
+	SUM(ISNULL(loan_38,0)) AS loan_38,  
+	SUM(ISNULL(loan_39,0)) AS loan_39,  
+	SUM(ISNULL(loan_40,0)) AS loan_40,  
+	SUM(ISNULL(loan_41,0)) AS loan_41,  
+	SUM(ISNULL(loan_42,0)) AS loan_42,  
+	SUM(ISNULL(loan_43,0)) AS loan_43,  
+	SUM(ISNULL(loan_44,0)) AS loan_44,  
+	SUM(ISNULL(loan_45,0)) AS loan_45,  
+	SUM(ISNULL(loan_46,0)) AS loan_46,  
+	SUM(ISNULL(loan_47,0)) AS loan_47,  
+	SUM(ISNULL(loan_48,0)) AS loan_48,  
+	SUM(ISNULL(loan_49,0)) AS loan_49,  
+	SUM(ISNULL(loan_50,0)) AS loan_50,  
+	'1' AS ins_user,GETDATE() AS ins_date,'' AS upd_user,'' AS upd_date ,
+	SUM(ISNULL(D.total,0)) AS total ,
+	SUM(ISNULL(loan_51,0)) AS loan_51,  
+	SUM(ISNULL(loan_52,0)) AS loan_52,  
+	SUM(ISNULL(loan_53,0)) AS loan_53,  
+	SUM(ISNULL(loan_54,0)) AS loan_54,  
+	SUM(ISNULL(loan_55,0)) AS loan_55,  
+	SUM(ISNULL(loan_56,0)) AS loan_56,  
+	'1' AS posting_flag, GETDATE() AS status_date,   
+    SUM(ISNULL(loan_57,0)) AS loan_57,  
+	SUM(ISNULL(loan_58,0)) AS loan_58,  
+	SUM(ISNULL(loan_59,0)) AS loan_59,  
+	SUM(ISNULL(loan_60,0)) AS loan_60
+	from  
+	( 
+		SELECT
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, COUNT(distinct EmployeeId) AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_00'	
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], COUNT(distinct EmployeeId) AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_01'
+		
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], COUNT(distinct EmployeeId) AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_02'
+		
+
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], COUNT(distinct EmployeeId) AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_03'
+		
+
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], COUNT(distinct EmployeeId) AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_04'
+		
+
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], COUNT(distinct EmployeeId) AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_05'
+		
+
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], COUNT(distinct EmployeeId) AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_06'
+		
+
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], COUNT(distinct EmployeeId) AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_07'
+		
+
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], COUNT(distinct EmployeeId) AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_08'
+		
+
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], COUNT(distinct EmployeeId) AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_09'
+		
+
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], COUNT(distinct EmployeeId) AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_10'
+		
+
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], COUNT(distinct EmployeeId) AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_11'
+		
+
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], COUNT(distinct EmployeeId) AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_12'
+		
+
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], COUNT(distinct EmployeeId) AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_13'
+		
+
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		COUNT(distinct EmployeeId) AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_14'
+		
+
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], COUNT(distinct EmployeeId) AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_15'
+		
+
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], COUNT(distinct EmployeeId) AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_16'
+		
+
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], COUNT(distinct EmployeeId) AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_17'
+		
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], COUNT(distinct EmployeeId) AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_18'
+		
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], COUNT(distinct EmployeeId) AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_19'
+		
+
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], COUNT(distinct EmployeeId) AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_20'
+		
+
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], COUNT(distinct EmployeeId) AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_21'
+		
+
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], COUNT(distinct EmployeeId) AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_22'
+		
+
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], COUNT(distinct EmployeeId) AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_23'
+		
+
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], COUNT(distinct EmployeeId) AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_24'
+		
+
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], COUNT(distinct EmployeeId) AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_25'
+		
+
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], COUNT(distinct EmployeeId) AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_26'
+		
+
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], COUNT(distinct EmployeeId) AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_27'
+		
+
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], COUNT(distinct EmployeeId) AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_28'
+		
+
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], COUNT(distinct EmployeeId) AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_29'
+		
+
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		COUNT(distinct EmployeeId) AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_30'
+		
+
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], COUNT(distinct EmployeeId) AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_31'
+		
+
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], COUNT(distinct EmployeeId) AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_32'
+		
+
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], COUNT(distinct EmployeeId) AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_33'
+		
+
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], COUNT(distinct EmployeeId) AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_34'
+		
+
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], COUNT(distinct EmployeeId) AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_35'
+		
+
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], COUNT(distinct EmployeeId) AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_36'
+		
+
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], COUNT(distinct EmployeeId) AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_37'
+		
+
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], COUNT(distinct EmployeeId) AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_38'
+		
+
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], COUNT(distinct EmployeeId) AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_39'
+		
+
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], COUNT(distinct EmployeeId) AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_40'
+		
+
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], COUNT(distinct EmployeeId) AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_41'
+		
+
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], COUNT(distinct EmployeeId) AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_42'
+		
+
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], COUNT(distinct EmployeeId) AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_43'
+		
+
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], COUNT(distinct EmployeeId) AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_44'
+		
+
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], COUNT(distinct EmployeeId) AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_45'
+		
+
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, COUNT(distinct EmployeeId) AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_46'
+		
+
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], COUNT(distinct EmployeeId) AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_47'
+		
+
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], COUNT(distinct EmployeeId) AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_48'
+		
+
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], COUNT(distinct EmployeeId) AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_49'
+		
+
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], COUNT(distinct EmployeeId) AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_50'
+		
+
+
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], COUNT(distinct EmployeeId) AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_51'
+		
+
+
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], COUNT(distinct EmployeeId) AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_52'
+		
+
+
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], COUNT(distinct EmployeeId) AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_53'
+		
+
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], COUNT(distinct EmployeeId) AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_54'
+		
+
+
+
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], COUNT(distinct EmployeeId) AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+ 
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_55'
+		
+
+
+
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], COUNT(distinct EmployeeId) AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_56'
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],COUNT(distinct EmployeeId) [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_57'
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],COUNT(distinct EmployeeId) [loan_58],0 [loan_59],0 [loan_60]
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_58'
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],COUNT(distinct EmployeeId) [loan_59],0 [loan_60]
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_59'
+
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], 0 AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],COUNT(distinct EmployeeId) [loan_60]
+		FROM #CTE_IND_CODE_058
+		WHERE LoanCode='Loan_60'
+
+
+		--FOR TOTAL
+		UNION ALL
+
+		Select
+		'058' AS IND_Code   
+		,'N' AS M_F_FLAG  
+		, 0 AS [loan_00], 0 AS [loan_01], 0 AS [loan_02], 0 AS [loan_03], 0 AS [loan_04], 0 AS [loan_05], 0 AS [loan_06], 0 AS [loan_07], 0 AS [loan_08], 0 AS [loan_09], 0 AS [loan_10], 0 AS [loan_11], 0 AS [loan_12], 0 AS [loan_13], 
+		0 AS [loan_14], 0 AS [loan_15], 0 AS [loan_16], 0 AS [loan_17], 0 AS [loan_18], 0 AS [loan_19], 0 AS [loan_20], 0 AS [loan_21], 0 AS [loan_22], 0 AS [loan_23], 0 AS [loan_24], 0 AS [loan_25], 0 AS [loan_26], 0 AS [loan_27], 0 AS [loan_28], 0 AS [loan_29],
+		0 AS [loan_30], 0 AS [loan_31], 0 AS [loan_32], 0 AS [loan_33], 0 AS [loan_34], 0 AS [loan_35], 0 AS [loan_36], 0 AS [loan_37], 0 AS [loan_38], 0 AS [loan_39], 0 AS [loan_40], 0 AS [loan_41], 0 AS [loan_42], 0 AS [loan_43], 0 AS [loan_44], 0 AS [loan_45]
+		, 0 AS [loan_46], 0 AS [loan_47], 0 AS [loan_48], 0 AS [loan_49], 0 AS [loan_50], 0 AS [ins_user], 0 AS [ins_date], 0 AS [upd_user], 0 AS [upd_date], COUNT(DISTINCT c.EmployeeId) AS [total], 0 AS [loan_51], 0 AS [loan_52], 0 AS [loan_53], 0 AS [loan_54], 0 AS [loan_55], 0 AS [loan_56],0 [loan_57],0 [loan_58],0 [loan_59],0 [loan_60]
+
+		--from Center c
+		--INNER JOIN Employee e on c.OfficeID = e.OfficeID and c.EmployeeId = e.EmployeeID
+		--INNER JOIN (
+		--SELECT DISTINCT CenterID,ProductID FROM LoanSummary WHERE IsActive=1 and LoanStatus=1
+		--) AS ls ON ls.CenterID = c.CenterID
+		--INNER JOIN Product as p ON p.ProductID = ls.ProductID
+		--INNER JOIN pksf.POProductMapping as ppm ON ppm.ProductCode = P.ProductCode
+		--where c.Centerstatus = 1 and e.employeestatus = 1
+		--and c.OfficeID not in (Select OfficeID from Office where left(Officecode,3)='999')		
+		----AND e.Designation = @Designation
+		from Employee e 
+	LEFT JOIN Center c on c.OfficeID = e.OfficeID and c.EmployeeId = e.EmployeeID
+	LEFT JOIN (
+	SELECT DISTINCT CenterID,ProductID FROM LoanSummary WHERE IsActive=1 
+	and LoanStatus=1
+	) AS ls ON ls.CenterID = c.CenterID
+	INNER JOIN Office o on o.OfficeID = e.OfficeID
+	INNER join Designation d on d.DesignationID=e.DesignationID 
+	INNER JOIN Product as p ON p.ProductID = ls.ProductID
+	INNER JOIN pksf.POProductMapping as ppm ON ppm.ProductCode = P.ProductCode
+	where c.Centerstatus = 1 and e.employeestatus = 1 
+	and c.OfficeID not in (Select OfficeID from Office where left(Officecode,3)='999')		
+	--AND e.Designation = @Designation  
+	and d.DesignationTypeID=1   --(New)
+
+
+	)AS D  
+	GROUP BY M_F_FLAG, IND_Code
+
+END
+
+

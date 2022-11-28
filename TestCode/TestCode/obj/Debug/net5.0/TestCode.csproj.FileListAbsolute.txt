@@ -29,3 +29,4 @@ D:\Notes\TestCode\TestCode\obj\Debug\net5.0\TestCode.dll
 D:\Notes\TestCode\TestCode\obj\Debug\net5.0\ref\TestCode.dll
 D:\Notes\TestCode\TestCode\obj\Debug\net5.0\TestCode.pdb
 D:\Notes\TestCode\TestCode\obj\Debug\net5.0\TestCode.genruntimeconfig.cache
+D:\Notes\TestCode\TestCode\obj\Debug\net5.0\TestCode.csproj.AssemblyReference.cache

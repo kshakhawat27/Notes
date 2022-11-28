@@ -1,0 +1,23 @@
+Alter PROCEDURE Proc_Get_DestrictWiseLoan
+  --@startDate DateTime,
+	 @filterDate nvarchar(100)='10/2021'
+
+AS
+BEGIN
+-- SET NOCOUNT ON added to prevent extra result sets from
+-- interfering with SELECT statements.
+SET NOCOUNT ON;
+DECLARE @LastDateOfTheMonth Date,@StartDateOfTheMonth Date,@YearOpeningDate date,  @MM nvarchar(5), @Year nvarchar(5),@MonthName nvarchar(5)
+	SET @MM= LEFT(@filterDate,2);
+	SET @Year= RIGHT(@filterDate,4);
+	SET @LastDateOfTheMonth= (SELECT [pksf].[fun_GetLastDteOfTheMonth]  (@MM,@Year))
+	SET @MonthName= (SELECT [pksf].[fn_GetMonthNameByNumber] (@MM))
+	SET @StartDateOfTheMonth ='01-'+@MonthName+'-'+@Year;
+
+
+	SET @YearOpeningDate =(SELECT TOP 1 DATEADD(DAY,1,(SELECT MAX(YearClosingDate) FROM ApplicationSettings)))
+
+	SET @YearOpeningDate =(SELECT 
+		CASE	WHEN @StartDateOfTheMonth<DATEADD(dd, 1, MAX(YearClosingDate)) THEN DATEADD(yy,-1,(DATEADD(dd, 1, MAX(YearClosingDate)))   )
+				ELSE DATEADD(dd, 1, MAX(YearClosingDate)) END
+		FROM ApplicationSettings);

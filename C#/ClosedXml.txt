@@ -1,0 +1,68 @@
+   public ActionResult GetMemberListExcelReport()
+        {
+
+            DataSet ds = new DataSet();
+            var sheetNames = new List<string>() { "TrimsInformation" };
+            string fileName = "Daily Production Report " + DateTime.Now.ToString("yyyy_dd_M_HH_mm_ss") + ".xlsx";
+            XLWorkbook wbook = new XLWorkbook();
+
+            IXLWorksheet Sheet = wbook.Worksheets.Add(sheetNames[0]);
+
+            var context = new gBankerDbContext();
+
+            var result = context.Proc_GET_ABAFileDataList().ToList();
+            DataTable dt3 = ConvertToDataTable(result);
+            ds.Tables.Add(dt3);
+            var dtStart = 1;
+            int counter = 0;
+            while (counter < ds.Tables.Count)
+            {
+
+                DataTable dt = ds.Tables[counter];
+                if (dt.Rows.Count > 0)
+                {
+                    for (int i = 0; i < dt.Columns.Count; i++)
+                    {
+                        Sheet.Cell(dtStart, (i + 1)).Value = dt.Columns[i].ColumnName;
+                        Sheet.Cell(dtStart, (i + 1)).Style.Font.Bold = true;
+                        Sheet.Cell(dtStart, (i + 1)).Style.Fill.BackgroundColor = XLColor.Yellow;
+                        Sheet.Cell(dtStart, (i + 1)).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                        Sheet.Cell(dtStart, (i + 1)).Style.Border.BottomBorder = XLBorderStyleValues.Thin;
+                        Sheet.Cell(dtStart, (i + 1)).Style.Border.BottomBorderColor = XLColor.Black;
+                        Sheet.Cell(dtStart, (i + 1)).Style.Border.TopBorder = XLBorderStyleValues.Thin;
+                        Sheet.Cell(dtStart, (i + 1)).Style.Border.TopBorderColor = XLColor.Black;
+                        Sheet.Cell(dtStart, (i + 1)).Style.Border.LeftBorder = XLBorderStyleValues.Thin;
+                        Sheet.Cell(dtStart, (i + 1)).Style.Border.LeftBorderColor = XLColor.Black;
+                        Sheet.Cell(dtStart, (i + 1)).Style.Border.RightBorder = XLBorderStyleValues.Thin;
+                        Sheet.Cell(dtStart, (i + 1)).Style.Border.RightBorderColor = XLColor.Black;
+                    }
+                    for (int i = 0; i < dt.Rows.Count; i++)
+                    {
+                        for (int j = 0; j < dt.Columns.Count; j++)
+                        {
+                            Sheet.Cell((dtStart + i + 1), (j + 1)).Value = dt.Rows[i][j].ToString();
+
+                            Sheet.Cell((dtStart + i + 1), (j + 1)).Style.Border.BottomBorder = XLBorderStyleValues.Thin;
+                            Sheet.Cell((dtStart + i + 1), (j + 1)).Style.Border.BottomBorderColor = XLColor.Black;
+                            Sheet.Cell((dtStart + i + 1), (j + 1)).Style.Border.TopBorder = XLBorderStyleValues.Thin;
+                            Sheet.Cell((dtStart + i + 1), (j + 1)).Style.Border.TopBorderColor = XLColor.Black;
+                            Sheet.Cell((dtStart + i + 1), (j + 1)).Style.Border.LeftBorder = XLBorderStyleValues.Thin;
+                            Sheet.Cell((dtStart + i + 1), (j + 1)).Style.Border.LeftBorderColor = XLColor.Black;
+                            Sheet.Cell((dtStart + i + 1), (j + 1)).Style.Border.RightBorder = XLBorderStyleValues.Thin;
+                            Sheet.Cell((dtStart + i + 1), (j + 1)).Style.Border.RightBorderColor = XLColor.Black;
+                        }
+                        dtStart++;
+                    }
+                }
+                counter++;
+                dtStart = dtStart + 2;
+            }
+
+            Sheet.Style.Font.FontColor = XLColor.Black;
+            Sheet.Columns().AdjustToContents();
+
+            Stream spreadsheetStream = new MemoryStream();
+            wbook.SaveAs(spreadsheetStream);
+            spreadsheetStream.Position = 0;
+
+            return new FileStreamResult(spreadsheetStream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
