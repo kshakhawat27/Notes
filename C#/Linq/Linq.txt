@@ -1,0 +1,18 @@
+    using (gBankerDbContext db=new gBankerDbContext())
+            {
+                objOffice = (from m in db.StoreInMasters
+                 join d in db.StoreInDetailss
+                 on m.ID equals d.StoreInMasterID
+                 where m.IsActive && d.IsActive && m.OfficeID == OutStoreID
+                 && d.ItemID == itemid && d.StockBalance > 0
+                 orderby m.StockInDate
+                 select new Inv_Store
+                 {
+                     Qty = d.Qty,
+                     StockBalance = d.StockBalance,
+                     UnitPrice = d.UnitPrice,
+                     StockInOrOutDate = m.StockInDate,
+                     MasterId=m.ID,
+                     DetailId=d.ID
+                 }).ToList();
+            }

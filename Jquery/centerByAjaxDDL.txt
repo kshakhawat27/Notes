@@ -1,0 +1,22 @@
+ function getCenterByOffice() {
+       var officeId = $('#OfficeID').val();
+       var ddlCenter = $("#CenterID");
+
+        $.ajax({
+            type: 'GET',
+            contentType: "application/json; charset=utf-8",
+            url: '/InterBranchTransaction/GetCenterByOffice',
+            data: { officeId: officeId },
+            dataType: 'json',
+            async: true,
+            success: function (data) {
+                ddlCenter.html('');
+                $.each(data, function (id, option) {
+                    ddlCenter.append($('<option></option>').val(option.Value).html(option.Text));
+                })
+            },
+            error: function (request, status, error) {
+                alert(request.statusText + "/" + request.statusText + "/" + error);
+            }
+        });
+    }

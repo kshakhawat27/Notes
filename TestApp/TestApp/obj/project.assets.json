@@ -8240,19 +8240,24 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\Software\\.nuget\\packages\\": {}
+    "C:\\Users\\Sakhawat\\.nuget\\packages\\": {},
+    "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\Notes\\TestApp\\TestApp\\TestApp.csproj",
+      "projectUniqueName": "E:\\Notes\\TestApp\\TestApp\\TestApp.csproj",
       "projectName": "TestApp",
-      "projectPath": "D:\\Notes\\TestApp\\TestApp\\TestApp.csproj",
-      "packagesPath": "C:\\Users\\Software\\.nuget\\packages\\",
-      "outputPath": "D:\\Notes\\TestApp\\TestApp\\obj\\",
+      "projectPath": "E:\\Notes\\TestApp\\TestApp\\TestApp.csproj",
+      "packagesPath": "C:\\Users\\Sakhawat\\.nuget\\packages\\",
+      "outputPath": "E:\\Notes\\TestApp\\TestApp\\obj\\",
       "projectStyle": "PackageReference",
+      "fallbackFolders": [
+        "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+      ],
       "configFilePaths": [
-        "C:\\Users\\Software\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\Sakhawat\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
       "originalTargetFrameworks": [
@@ -8323,6 +8328,24 @@
         ],
         "assetTargetFallback": true,
         "warn": true,
+        "downloadDependencies": [
+          {
+            "name": "Microsoft.AspNetCore.App.Ref",
+            "version": "[5.0.0, 5.0.0]"
+          },
+          {
+            "name": "Microsoft.NETCore.App.Host.win-x64",
+            "version": "[5.0.17, 5.0.17]"
+          },
+          {
+            "name": "Microsoft.NETCore.App.Ref",
+            "version": "[5.0.0, 5.0.0]"
+          },
+          {
+            "name": "Microsoft.WindowsDesktop.App.Ref",
+            "version": "[5.0.0, 5.0.0]"
+          }
+        ],
         "frameworkReferences": {
           "Microsoft.AspNetCore.App": {
             "privateAssets": "none"
@@ -8331,7 +8354,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\5.0.408\\RuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\5.0.415\\RuntimeIdentifierGraph.json"
       }
     }
   }
