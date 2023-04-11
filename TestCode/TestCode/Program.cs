@@ -106,10 +106,10 @@ namespace TestCode
         {
             int[] a = { 1, 3, 5, 7 };
 
-            for(int i=0; i <= a.Length-1; i++)
-            {
-                Console.Write($"Array,{a[i]}");
-            }
+            //for(int i=0; i <= a.Length-1; i++)
+            //{
+            //    Console.Write($"Array,{a[i]}");
+            //}
             //foreach(var item in a)
             //{
             //    Console.WriteLine(item);
@@ -130,7 +130,7 @@ namespace TestCode
             //model.num = 2;
             //model.Code = "0032";
             //CRUD.Savevalue(model);
-            //ReaminQty();
+            ReaminQty();
             //BreakLoop();
             //var test = new List<dynamic>();
 

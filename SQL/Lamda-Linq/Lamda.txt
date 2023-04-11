@@ -1,0 +1,15 @@
+var id = 1;
+var query =
+   from post in database.Posts
+   join meta in database.Post_Metas on post.ID equals meta.Post_ID
+   where post.ID == id
+   select new { Post = post, Meta = meta };
+If you're really stuck on using lambdas though, your syntax is quite a bit off. Here's the same query, using the LINQ extension methods:
+
+var id = 1;
+var query = database.Posts    // your starting point - table in the "from" statement
+   .Join(database.Post_Metas, // the source table of the inner join
+      post => post.ID,        // Select the primary key (the first part of the "on" clause in an sql "join" statement)
+      meta => meta.Post_ID,   // Select the foreign key (the second part of the "on" clause)
+      (post, meta) => new { Post = post, Meta = meta }) // selection
+   .Where(postAndMeta => postAndMeta.Post.ID == id);    // where statement

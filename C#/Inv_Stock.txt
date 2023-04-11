@@ -1,0 +1,61 @@
+     //.OrderBy(x => x.ID);
+            var sqty = iStoreInDetailsService.GetMany(x => x.ItemID == itemid && x.StockBalance > 0 /*&& x.StockInOrOutDate >= vdt*/)
+            .OrderBy(x => x.ID);
+            if (sqty.Any())
+            {
+                foreach (var s in sqty)
+                {
+                    if (qty > 0)
+                    {
+                        if (s.StockBalance >= qty)
+                        {
+                            //Inv_Store sObj = new Inv_Store()
+                            //{
+                            //    EmployeeID = 0,
+                            //    IsActive = true,
+                            //    Qty = qty,
+                            //    StockBalance = qty,
+                            //    StoreNo = "",
+                            //    StockInOrOutDate = StockoutDate,
+                            //    CreateBy = LoginUserOfficeID.Value,
+                            //    CreateDate = DateTime.Now,
+                            //    ItemID = itemid,
+                            //    StockType = "O",
+                            //    UnitPrice = s.UnitPrice,
+                            //    WarehouseID = OutStoreID,
+                            //    RequisitionID = (ConsulateRequisitionID > 0 ? ConsulateRequisitionID : RequisitionID),
+                            //    RefStoreID = s.ID
+                            //};
+                            //objInvStoreLst.Add(sObj);
+                            //iInvStoreService.Create(sObj);
+
+
+
+                            var storeoutDetails = new StoreOutDetails();
+
+                            //storeoutDetails.StoreOutMasterID = storeOutMaster.ID;
+                            storeoutDetails.ItemID = itemid;
+                            storeoutDetails.Qty = qty;
+                            storeoutDetails.UnitPrice = s.UnitPrice;
+                            //storeoutDetails.StockBalance = qty;
+                            storeoutDetails.EmployeeID = 0;
+                            //storeoutDetails.Remarks = ""
+                            storeoutDetails.IsActive = true;
+                            storeoutDetails.RefStoreInDetailID = s.ID;
+                            iStoreOutDetailsService.Create(storeoutDetails);
+
+
+
+                            totalPrice += s.UnitPrice * qty;
+
+                            s.StockBalance = s.StockBalance - qty;
+
+
+                            StoreInDetails storeInDetails = iStoreInDetailsService.GetById((int)s.ID);
+
+                            storeInDetails.StoreInMasterID = s.StoreInMasterID;
+                            storeInDetails.ItemID = s.ItemID;
+                            storeInDetails.Qty = s.StockBalance - qty;
+
+                            iStoreInDetailsService.Update(storeInDetails);
+                            qty = 0;
